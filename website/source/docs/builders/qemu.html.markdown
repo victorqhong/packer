@@ -35,7 +35,6 @@ to files, URLS for ISOs and checksums.
       "iso_checksum": "0d9dc37b5dd4befa1c440d2174e88a87",
       "iso_checksum_type": "md5",
       "output_directory": "output_centos_tdhtest",
-      "ssh_wait_timeout": "30s",
       "shutdown_command": "shutdown -P now",
       "disk_size": 5000,
       "format": "qcow2",
@@ -49,7 +48,7 @@ to files, URLS for ISOs and checksums.
       "ssh_username": "root",
       "ssh_password": "s0m3password",
       "ssh_port": 22,
-      "ssh_wait_timeout": "90m",
+      "ssh_wait_timeout": "30s",
       "vm_name": "tdhtest",
       "net_device": "virtio-net",
       "disk_interface": "virtio",
@@ -247,8 +246,9 @@ builder and not otherwise conflicting with the qemuargs):
     host port.
 
 -   `vm_name` (string) - This is the name of the image (QCOW2 or IMG) file for
-    the new virtual machine, without the file extension. By default this is
-    "packer-BUILDNAME", where "BUILDNAME" is the name of the build.
+    the new virtual machine. By default this is "packer-BUILDNAME", where
+    `BUILDNAME` is the name of the build. Currently, no file extension will be
+    used unless it is specified in this option.
 
 -   `vnc_port_min` and `vnc_port_max` (integer) - The minimum and maximum port
     to use for the VNC port on the host machine which is forwarded to the VNC
