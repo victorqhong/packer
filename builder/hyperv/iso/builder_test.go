@@ -14,7 +14,7 @@ func testConfig() map[string]interface{} {
 		"shutdown_command":  "yes",
 		"ssh_username":      "foo",
 		"ram_size_mb":       64,
-		"disk_size":       	 1024,
+		"disk_size":       	 256,
 		packer.BuildNameConfigKey: "foo",
 	}
 }
@@ -56,11 +56,11 @@ func TestBuilderPrepare_DiskSize(t *testing.T) {
 		t.Fatalf("bad err: %s", err)
 	}
 
-	if b.config.DiskSize != 40000 {
+	if b.config.DiskSize != 40 * 1024 {
 		t.Fatalf("bad size: %d", b.config.DiskSize)
 	}
 
-	config["disk_size"] = 60000
+	config["disk_size"] = 256
 	b = Builder{}
 	warns, err = b.Prepare(config)
 	if len(warns) > 0 {
@@ -70,7 +70,7 @@ func TestBuilderPrepare_DiskSize(t *testing.T) {
 		t.Fatalf("should not have error: %s", err)
 	}
 
-	if b.config.DiskSize != 60000 {
+	if b.config.DiskSize != 256 {
 		t.Fatalf("bad size: %d", b.config.DiskSize)
 	}
 }
