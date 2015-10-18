@@ -13,7 +13,8 @@ func testConfig() map[string]interface{} {
 		"iso_url":           "http://www.packer.io",
 		"shutdown_command":  "yes",
 		"ssh_username":      "foo",
-
+		"ram_size_mb":       64,
+		"disk_size":       	 1024,
 		packer.BuildNameConfigKey: "foo",
 	}
 }
