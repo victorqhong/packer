@@ -42,7 +42,7 @@ func (s *StepMountSecondaryDvdImages) Run(state multistep.StateBag) multistep.St
 		return multistep.ActionHalt
 	}
 
-	log.Println(fmt.Sprintf("Saving DVD properties %s DVDs", len(dvdProperties)))
+	log.Println(fmt.Sprintf("Saving DVD properties %d DVDs", len(dvdProperties)))
 
 	state.Put("secondary.dvd.properties", dvdProperties)
 
@@ -112,7 +112,7 @@ func (s *StepMountSecondaryDvdImages) addAndMountDvdDisk(vmName string, isoPath 
 			return properties, err
 		}
 
-		if controllerNumber != "0" || controllerNumber != "1" {
+		if controllerNumber != "0" && controllerNumber != "1" {
 			//There are only 2 ide controllers, try to use the one the hdd is attached too
 			controllerNumber = "0"
 		}
