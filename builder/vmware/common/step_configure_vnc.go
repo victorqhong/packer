@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"strconv"
 
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/packer"
@@ -76,8 +77,20 @@ func (s *StepConfigureVNC) Run(state multistep.StateBag) multistep.StepAction {
 	vmxData := ParseVMX(string(vmxBytes))
 	vmxData["remotedisplay.vnc.enabled"] = "TRUE"
 
-	if val, ok := vmxData["remotedisplay.vnc.port"]; ok {
-		log.Printf("VNC port specified: %d", vmxData["remotedisplay.vnc.port"])
+	if vncPortString, ok := vmxData["remotedisplay.vnc.port"]; ok {
+		vncIp := "127.0.0.1"
+
+		vncPort, err := strconv.ParseUint(vncPortString, 10, 64) 
+		if err != nil {
+			state.Put("error", err)
+			ui.Error(err.Error())
+			return multistep.ActionHalt
+		}
+				
+		log.Printf("VNC port specified: %d", vncIp)
+
+		state.Put("vnc_port", vncPort)
+		state.Put("vnc_ip", vncIp)		
 	} else {
 		var vncFinder VNCAddressFinder
 		if finder, ok := driver.(VNCAddressFinder); ok {
@@ -94,7 +107,11 @@ func (s *StepConfigureVNC) Run(state multistep.StateBag) multistep.StepAction {
 		}
 
 		log.Printf("Found available VNC port: %d", vncPort)
+		
 		vmxData["remotedisplay.vnc.port"] = fmt.Sprintf("%d", vncPort)
+		
+		state.Put("vnc_port", vncPort)
+		state.Put("vnc_ip", vncIp)
 	}
 
 	if err := WriteVMX(vmxPath, vmxData); err != nil {
@@ -103,9 +120,6 @@ func (s *StepConfigureVNC) Run(state multistep.StateBag) multistep.StepAction {
 		ui.Error(err.Error())
 		return multistep.ActionHalt
 	}
-
-	state.Put("vnc_port", vncPort)
-	state.Put("vnc_ip", vncIp)
 
 	return multistep.ActionContinue
 }
