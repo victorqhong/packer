@@ -77,6 +77,8 @@ func (s *StepConfigureVNC) Run(state multistep.StateBag) multistep.StepAction {
 	vmxData["remotedisplay.vnc.enabled"] = "TRUE"
 
 	if val, ok := vmxData["remotedisplay.vnc.port"]; ok {
+		log.Printf("VNC port specified: %d", vmxData["remotedisplay.vnc.port"])
+	} else {
 		var vncFinder VNCAddressFinder
 		if finder, ok := driver.(VNCAddressFinder); ok {
 			vncFinder = finder
@@ -93,7 +95,6 @@ func (s *StepConfigureVNC) Run(state multistep.StateBag) multistep.StepAction {
 
 		log.Printf("Found available VNC port: %d", vncPort)
 		vmxData["remotedisplay.vnc.port"] = fmt.Sprintf("%d", vncPort)
-
 	}
 
 	if err := WriteVMX(vmxPath, vmxData); err != nil {
