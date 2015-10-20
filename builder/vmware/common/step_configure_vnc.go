@@ -87,7 +87,7 @@ func (s *StepConfigureVNC) Run(state multistep.StateBag) multistep.StepAction {
 			return multistep.ActionHalt
 		}
 				
-		log.Printf("VNC port specified: %d", vncIp)
+		log.Printf("VNC port specified: %d", vncPort)
 
 		state.Put("vnc_port", vncPort)
 		state.Put("vnc_ip", vncIp)		
