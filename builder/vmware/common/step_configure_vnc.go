@@ -80,17 +80,19 @@ func (s *StepConfigureVNC) Run(state multistep.StateBag) multistep.StepAction {
 	if vncPortString, ok := vmxData["remotedisplay.vnc.port"]; ok {
 		vncIp := "127.0.0.1"
 
-		vncPort, err := strconv.ParseUint(vncPortString, 10, 64) 
-		if err != nil {
+		if vncPortInt, err := strconv.Atoi(vncPortString); err == nil {
+		    vncPort := uint(vncPortInt)
+
+			log.Printf("VNC port specified: %d", vncPort)
+	
+			state.Put("vnc_port", vncPort)
+			state.Put("vnc_ip", vncIp)	
+
+		} else {
 			state.Put("error", err)
 			ui.Error(err.Error())
 			return multistep.ActionHalt
-		}
-				
-		log.Printf("VNC port specified: %d", vncPort)
-
-		state.Put("vnc_port", vncPort)
-		state.Put("vnc_ip", vncIp)		
+		}				
 	} else {
 		var vncFinder VNCAddressFinder
 		if finder, ok := driver.(VNCAddressFinder); ok {
