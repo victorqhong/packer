@@ -73,25 +73,28 @@ func (s *StepConfigureVNC) Run(state multistep.StateBag) multistep.StepAction {
 		return multistep.ActionHalt
 	}
 
-	var vncFinder VNCAddressFinder
-	if finder, ok := driver.(VNCAddressFinder); ok {
-		vncFinder = finder
-	} else {
-		vncFinder = s
-	}
-	log.Printf("Looking for available port between %d and %d", s.VNCPortMin, s.VNCPortMax)
-	vncIp, vncPort, err := vncFinder.VNCAddress(s.VNCPortMin, s.VNCPortMax)
-	if err != nil {
-		state.Put("error", err)
-		ui.Error(err.Error())
-		return multistep.ActionHalt
-	}
-
-	log.Printf("Found available VNC port: %d", vncPort)
-
 	vmxData := ParseVMX(string(vmxBytes))
 	vmxData["remotedisplay.vnc.enabled"] = "TRUE"
-	vmxData["remotedisplay.vnc.port"] = fmt.Sprintf("%d", vncPort)
+
+	if val, ok := vmxData["remotedisplay.vnc.port"]; ok {
+		var vncFinder VNCAddressFinder
+		if finder, ok := driver.(VNCAddressFinder); ok {
+			vncFinder = finder
+		} else {
+			vncFinder = s
+		}
+		log.Printf("Looking for available port between %d and %d", s.VNCPortMin, s.VNCPortMax)
+		vncIp, vncPort, err := vncFinder.VNCAddress(s.VNCPortMin, s.VNCPortMax)
+		if err != nil {
+			state.Put("error", err)
+			ui.Error(err.Error())
+			return multistep.ActionHalt
+		}
+
+		log.Printf("Found available VNC port: %d", vncPort)
+		vmxData["remotedisplay.vnc.port"] = fmt.Sprintf("%d", vncPort)
+
+	}
 
 	if err := WriteVMX(vmxPath, vmxData); err != nil {
 		err := fmt.Errorf("Error writing VMX data: %s", err)
