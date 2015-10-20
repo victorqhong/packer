@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"runtime"
 
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/packer"
@@ -50,6 +51,7 @@ func (StepConfigureVNC) VNCAddress(portMin, portMax uint) (string, uint, error) 
 			break
 		}
 	}
+	
 	return "127.0.0.1", vncPort, nil
 }
 
@@ -78,7 +80,22 @@ func (s *StepConfigureVNC) Run(state multistep.StateBag) multistep.StepAction {
 	vmxData["remotedisplay.vnc.enabled"] = "TRUE"
 
 	if vncPortString, ok := vmxData["remotedisplay.vnc.port"]; ok {
-		vncIp := "127.0.0.1"
+		var ipFinder HostIPFinder
+		if finder, ok := driver.(HostIPFinder); ok {
+			ipFinder = finder
+		} else if runtime.GOOS == "windows" {
+			ipFinder = new(VMnetNatConfIPFinder)
+		} else {
+			ipFinder = &IfconfigIPFinder{Device: "vmnet8"}
+		}
+	
+		vncIp, err := ipFinder.HostIP()
+		if err != nil {
+			err := fmt.Errorf("Error detecting host IP: %s", err)
+			state.Put("error", err)
+			ui.Error(err.Error())
+			return multistep.ActionHalt
+		}
 
 		if vncPortInt, err := strconv.Atoi(vncPortString); err == nil {
 		    vncPort := uint(vncPortInt)
