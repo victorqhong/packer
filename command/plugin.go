@@ -67,7 +67,7 @@ var Builders = map[string]packer.Builder{
 	"docker":   new(dockerbuilder.Builder),
 	"file":   new(filebuilder.Builder),
 	"googlecompute":   new(googlecomputebuilder.Builder),
-	"hyperv":   new(hypervbuilder.Builder),
+	"hyperv-iso":   new(hypervbuilder.Builder),
 	"null":   new(nullbuilder.Builder),
 	"openstack":   new(openstackbuilder.Builder),
 	"parallels-iso":   new(parallelsisobuilder.Builder),
