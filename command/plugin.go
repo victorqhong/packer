@@ -31,7 +31,7 @@ import (
 	filebuilder "github.com/mitchellh/packer/builder/file"
 	fileprovisioner "github.com/mitchellh/packer/provisioner/file"
 	googlecomputebuilder "github.com/mitchellh/packer/builder/googlecompute"
-	hypervbuilder "github.com/mitchellh/packer/builder/hyperv"
+	hypervbuilder "github.com/mitchellh/packer/builder/hyperv/iso"
 	nullbuilder "github.com/mitchellh/packer/builder/null"
 	openstackbuilder "github.com/mitchellh/packer/builder/openstack"
 	parallelsisobuilder "github.com/mitchellh/packer/builder/parallels/iso"
