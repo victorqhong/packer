@@ -69,19 +69,16 @@ while ((!($t.state -eq 4)) -and ($sec -lt $timeout)) {
   Start-Sleep -s 1
   $sec++
 }
-function SlurpOutput($l) {
-  if (Test-Path $log) {
-    Get-Content $log | select -skip $l | ForEach {
-      $l += 1
-      Write-Output "$_"
-    }
-  }
-  return $l
-}
+
 $line = 0
 do {
   Start-Sleep -m 100
-  $line = SlurpOutput $line
+  if (Test-Path $log) {
+    Get-Content $log | select -skip $line | ForEach {
+      $line += 1
+      Write-Output "$_"
+    }
+  }
 } while (!($t.state -eq 3))
 $result = $t.LastTaskResult
 [System.Runtime.Interopservices.Marshal]::ReleaseComObject($s) | Out-Null
