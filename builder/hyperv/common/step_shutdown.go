@@ -40,6 +40,7 @@ func (s *StepShutdown) Run(state multistep.StateBag) multistep.StepAction {
 
 		var stdout, stderr bytes.Buffer
 		cmd := &packer.RemoteCmd{
+			ExitStatus: 0,
 			Command: s.Command,
 			Stdout:  &stdout,
 			Stderr:  &stderr,
