@@ -67,7 +67,7 @@ func (s *StepCreateFloppy) Run(state multistep.StateBag) multistep.StepAction {
 	// Format the block device so it contains a valid FAT filesystem
 	log.Println("Formatting the block device with a FAT filesystem...")
 	formatConfig := &fat.SuperFloppyConfig{
-		FATType: fat.FAT16,
+		FATType: fat.FAT12,
 		Label:   "packer",
 		OEMName: "packer",
 	}
