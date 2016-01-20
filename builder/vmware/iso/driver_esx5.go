@@ -16,6 +16,7 @@ import (
 	"runtime"
 
 	"github.com/mitchellh/multistep"
+	commonssh "github.com/mitchellh/packer/common/ssh"
 	"github.com/mitchellh/packer/communicator/ssh"
 	"github.com/mitchellh/packer/packer"
 	gossh "golang.org/x/crypto/ssh"
@@ -28,6 +29,7 @@ type ESX5Driver struct {
 	Port           uint
 	Username       string
 	Password       string
+	PrivateKey     string
 	Datastore      string
 	CacheDatastore string
 	CacheDirectory string
@@ -341,7 +343,15 @@ func (d *ESX5Driver) connect() error {
 			ssh.PasswordKeyboardInteractive(d.Password)),
 	}
 
-	// TODO(dougm) KeyPath support
+	if d.PrivateKey != "" {
+		signer, err := commonssh.FileSigner(d.PrivateKey)
+		if err != nil {
+			return err
+		}
+
+		auth = append(auth, gossh.PublicKeys(signer))
+	}
+
 	sshConfig := &ssh.Config{
 		Connection: ssh.ConnectFunc("tcp", address),
 		SSHConfig: &gossh.ClientConfig{
