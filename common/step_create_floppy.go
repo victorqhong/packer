@@ -109,7 +109,7 @@ func (s *StepCreateFloppy) Run(state multistep.StateBag) multistep.StepAction {
 
 func (s *StepCreateFloppy) Cleanup(multistep.StateBag) {
 	if s.floppyPath != "" {
-		if _, err := os.Stat(s.floppyPath); os.IsNotExist(err) {
+		if _, err := os.Stat(s.floppyPath); err == nil {
 			log.Printf("Deleting floppy disk: %s", s.floppyPath)
 			os.Remove(s.floppyPath)
 		}
