@@ -314,8 +314,6 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 
 	b.runner.Run(state)
 	
-	ui.Say("Before checking for error")
-
 	// If there was an error, return that
 	if rawErr, ok := state.GetOk("error"); ok {
 		return nil, rawErr.(error)
@@ -329,8 +327,6 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 	if _, ok := state.GetOk(multistep.StateHalted); ok {
 		return nil, errors.New("Build was halted.")
 	}
-	
-	ui.Say("After checking for error")
 
 	// Compile the artifact list
 	var files []string

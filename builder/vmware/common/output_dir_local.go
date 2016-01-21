@@ -19,6 +19,10 @@ func (d *LocalOutputDir) DirExists() (bool, error) {
 func (d *LocalOutputDir) ListFiles() ([]string, error) {
 	files := make([]string, 0, 10)
 
+	if _, err := os.Stat(d.dir); os.IsNotExist(err) {
+		return files, nil
+	}	
+
 	visit := func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
