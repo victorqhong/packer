@@ -54,7 +54,7 @@ func (c *PushCommand) Run(args []string) int {
 	}
 
 	if message != "" {
-		c.Ui.Message("[DEPRECATED] -m/-message is deprecated and will be removed in a future Packer release")
+		c.Ui.Say("[DEPRECATED] -m/-message is deprecated and will be removed in a future Packer release")
 	}
 
 	args = f.Args()
