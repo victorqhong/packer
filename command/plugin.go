@@ -19,16 +19,9 @@ import (
 	azurearmbuilder "github.com/mitchellh/packer/builder/azure/arm"
 	digitaloceanbuilder "github.com/mitchellh/packer/builder/digitalocean"
 	dockerbuilder "github.com/mitchellh/packer/builder/docker"
-	dockerimportpostprocessor "github.com/mitchellh/packer/post-processor/docker-import"
-	dockerpushpostprocessor "github.com/mitchellh/packer/post-processor/docker-push"
-	dockersavepostprocessor "github.com/mitchellh/packer/post-processor/docker-save"
-	dockertagpostprocessor "github.com/mitchellh/packer/post-processor/docker-tag"
 	filebuilder "github.com/mitchellh/packer/builder/file"
-	fileprovisioner "github.com/mitchellh/packer/provisioner/file"
 	googlecomputebuilder "github.com/mitchellh/packer/builder/googlecompute"
 	hypervbuilder "github.com/mitchellh/packer/builder/hyperv/iso"
-	filebuilder "github.com/mitchellh/packer/builder/file"
-	googlecomputebuilder "github.com/mitchellh/packer/builder/googlecompute"
 	nullbuilder "github.com/mitchellh/packer/builder/null"
 	openstackbuilder "github.com/mitchellh/packer/builder/openstack"
 	parallelsisobuilder "github.com/mitchellh/packer/builder/parallels/iso"
@@ -78,17 +71,9 @@ var Builders = map[string]packer.Builder{
 	"docker":          new(dockerbuilder.Builder),
 	"file":            new(filebuilder.Builder),
 	"googlecompute":   new(googlecomputebuilder.Builder),
+	"hyperv-iso":      new(hypervbuilder.Builder),
 	"null":            new(nullbuilder.Builder),
 	"openstack":       new(openstackbuilder.Builder),
-	"amazon-ebs":   new(amazonebsbuilder.Builder),
-	"amazon-instance":   new(amazoninstancebuilder.Builder),
-	"digitalocean":   new(digitaloceanbuilder.Builder),
-	"docker":   new(dockerbuilder.Builder),
-	"file":   new(filebuilder.Builder),
-	"googlecompute":   new(googlecomputebuilder.Builder),
-	"hyperv-iso":   new(hypervbuilder.Builder),
-	"null":   new(nullbuilder.Builder),
-	"openstack":   new(openstackbuilder.Builder),
 	"parallels-iso":   new(parallelsisobuilder.Builder),
 	"parallels-pvm":   new(parallelspvmbuilder.Builder),
 	"qemu":            new(qemubuilder.Builder),
