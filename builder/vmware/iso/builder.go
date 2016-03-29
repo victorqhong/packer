@@ -46,6 +46,7 @@ type Config struct {
 	Version             string   `mapstructure:"version"`
 	VMName              string   `mapstructure:"vm_name"`
 	BootCommand         []string `mapstructure:"boot_command"`
+	KeepRegistered      bool     `mapstructure:"keep_registered"`
 	SkipCompaction      bool     `mapstructure:"skip_compaction"`
 	VMXTemplatePath     string   `mapstructure:"vmx_template_path"`
 	VMXDiskTemplatePath string   `mapstructure:"vmx_disk_template_path"`
@@ -147,7 +148,6 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 	if b.config.RemotePort == 0 {
 		b.config.RemotePort = 22
 	}
-
 	if b.config.VMXTemplatePath != "" {
 		if err := b.validateVMXTemplatePath(); err != nil {
 			errs = packer.MultiErrorAppend(
@@ -286,6 +286,9 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 			Timeout: b.config.ShutdownTimeout,
 		},
 		&vmwcommon.StepCleanFiles{},
+		&vmwcommon.StepCompactDisk{
+			Skip: b.config.SkipCompaction,
+		},
 		&vmwcommon.StepConfigureVMX{
 			CustomData: b.config.VMXDataPost,
 			SkipFloppy: true,
@@ -293,9 +296,6 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 		&vmwcommon.StepCleanVMX{},
 		&StepUploadVMX{
 			RemoteType: b.config.RemoteType,
-		},
-		&vmwcommon.StepCompactDisk{
-			Skip: b.config.SkipCompaction,
 		},
 		&StepExport{
 			Format: b.config.Format,

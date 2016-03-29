@@ -22,18 +22,20 @@ var builtins = map[string]string{
 type Config struct {
 	common.PackerConfig `mapstructure:",squash"`
 
-	Insecure     bool   `mapstructure:"insecure"`
-	Cluster      string `mapstructure:"cluster"`
-	Datacenter   string `mapstructure:"datacenter"`
-	Datastore    string `mapstructure:"datastore"`
-	DiskMode     string `mapstructure:"disk_mode"`
-	Host         string `mapstructure:"host"`
-	Password     string `mapstructure:"password"`
-	ResourcePool string `mapstructure:"resource_pool"`
-	Username     string `mapstructure:"username"`
-	VMFolder     string `mapstructure:"vm_folder"`
-	VMName       string `mapstructure:"vm_name"`
-	VMNetwork    string `mapstructure:"vm_network"`
+	Cluster      string   `mapstructure:"cluster"`
+	Datacenter   string   `mapstructure:"datacenter"`
+	Datastore    string   `mapstructure:"datastore"`
+	DiskMode     string   `mapstructure:"disk_mode"`
+	Host         string   `mapstructure:"host"`
+	Insecure     bool     `mapstructure:"insecure"`
+	Options      []string `mapstructure:"options"`
+	Overwrite    bool     `mapstructure:"overwrite"`
+	Password     string   `mapstructure:"password"`
+	ResourcePool string   `mapstructure:"resource_pool"`
+	Username     string   `mapstructure:"username"`
+	VMFolder     string   `mapstructure:"vm_folder"`
+	VMName       string   `mapstructure:"vm_name"`
+	VMNetwork    string   `mapstructure:"vm_network"`
 
 	ctx interpolate.Context
 }
@@ -122,13 +124,23 @@ func (p *PostProcessor) PostProcess(ui packer.Ui, artifact packer.Artifact) (pac
 	args := []string{
 		fmt.Sprintf("--noSSLVerify=%t", p.config.Insecure),
 		"--acceptAllEulas",
-		fmt.Sprintf("--name=%s", p.config.VMName),
-		fmt.Sprintf("--datastore=%s", p.config.Datastore),
-		fmt.Sprintf("--diskMode=%s", p.config.DiskMode),
-		fmt.Sprintf("--network=%s", p.config.VMNetwork),
-		fmt.Sprintf("--vmFolder=%s", p.config.VMFolder),
+		fmt.Sprintf("--name=\"%s\"", p.config.VMName),
+		fmt.Sprintf("--datastore=\"%s\"", p.config.Datastore),
+		fmt.Sprintf("--diskMode=\"%s\"", p.config.DiskMode),
+		fmt.Sprintf("--network=\"%s\"", p.config.VMNetwork),
+		fmt.Sprintf("--vmFolder=\"%s\"", p.config.VMFolder),
 		fmt.Sprintf("%s", source),
-		fmt.Sprintf("%s", ovftool_uri),
+		fmt.Sprintf("\"%s\"", ovftool_uri),
+	}
+
+	ui.Message(fmt.Sprintf("Uploading %s to vSphere", source))
+
+	if p.config.Overwrite == true {
+		args = append(args, "--overwrite")
+	}
+
+	if len(p.config.Options) > 0 {
+		args = append(args, p.config.Options...)
 	}
 
 	ui.Message(fmt.Sprintf("Uploading %s to vSphere", source))

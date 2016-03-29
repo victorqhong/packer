@@ -83,6 +83,7 @@ type Config struct {
 	common.ISOConfig    `mapstructure:",squash"`
 	Comm                communicator.Config `mapstructure:",squash"`
 
+	ISOSkipCache    bool       `mapstructure:"iso_skip_cache"`
 	Accelerator     string     `mapstructure:"accelerator"`
 	BootCommand     []string   `mapstructure:"boot_command"`
 	DiskInterface   string     `mapstructure:"disk_interface"`
@@ -109,7 +110,6 @@ type Config struct {
 
 	// These are deprecated, but we keep them around for BC
 	// TODO(@mitchellh): remove
-	SSHKeyPath     string        `mapstructure:"ssh_key_path"`
 	SSHWaitTimeout time.Duration `mapstructure:"ssh_wait_timeout"`
 
 	// TODO(mitchellh): deprecate
@@ -211,15 +211,16 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 	}
 
 	// TODO: backwards compatibility, write fixer instead
-	if b.config.SSHKeyPath != "" {
-		b.config.Comm.SSHPrivateKey = b.config.SSHKeyPath
-	}
 	if b.config.SSHWaitTimeout != 0 {
 		b.config.Comm.SSHTimeout = b.config.SSHWaitTimeout
 	}
 
 	var errs *packer.MultiError
 	warnings := make([]string, 0)
+
+	if b.config.ISOSkipCache {
+		b.config.ISOChecksumType = "none"
+	}
 
 	isoWarnings, isoErrs := b.config.ISOConfig.Prepare(&b.config.ctx)
 	warnings = append(warnings, isoWarnings...)
@@ -326,8 +327,9 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 		steprun.Message = "Starting VM, booting disk image"
 	}
 
-	steps := []multistep.Step{
-		&common.StepDownload{
+	steps := []multistep.Step{}
+	if !b.config.ISOSkipCache {
+		steps = append(steps, &common.StepDownload{
 			Checksum:     b.config.ISOChecksum,
 			ChecksumType: b.config.ISOChecksumType,
 			Description:  "ISO",
@@ -336,7 +338,16 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 			TargetPath:   b.config.TargetPath,
 			Url:          b.config.ISOUrls,
 		},
-		new(stepPrepareOutputDir),
+		)
+	} else {
+		steps = append(steps, &stepSetISO{
+			ResultKey: "iso_path",
+			Url:       b.config.ISOUrls,
+		},
+		)
+	}
+
+	steps = append(steps, new(stepPrepareOutputDir),
 		&common.StepCreateFloppy{
 			Files: b.config.FloppyFiles,
 		},
@@ -363,7 +374,7 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 		new(common.StepProvision),
 		new(stepShutdown),
 		new(stepConvertDisk),
-	}
+	)
 
 	// Setup the state bag
 	state := new(multistep.BasicStateBag)

@@ -1,4 +1,6 @@
 // This is the main package for the `packer` application.
+
+//go:generate go run ./scripts/generate-plugins.go
 package main
 
 import (
@@ -110,7 +112,10 @@ func wrappedMain() int {
 	log.Printf("Built with Go Version: %s", runtime.Version())
 
 	// Prepare stdin for plugin usage by switching it to a pipe
-	setupStdin()
+	// But do not switch to pipe in plugin
+	if os.Getenv(plugin.MagicCookieKey) != plugin.MagicCookieValue {
+		setupStdin()
+	}
 
 	config, err := loadConfig()
 	if err != nil {
