@@ -8,8 +8,8 @@ import (
 	"fmt"
 
 	"github.com/mitchellh/multistep"
+	"github.com/mitchellh/packer/common/uuid"
 	"github.com/mitchellh/packer/packer"
-	"github.com/twinj/uuid"
 )
 
 // This step creates switch for VM.
@@ -31,7 +31,7 @@ func (s *StepCreateExternalSwitch) Run(state multistep.StateBag) multistep.StepA
 
 	ui.Say("Creating external switch...")
 
-	packerExternalSwitchName := "paes_" + uuid.NewV1().String()
+	packerExternalSwitchName := "paes_" + uuid.TimeOrderedUUID()
 
 	err = driver.CreateExternalVirtualSwitch(vmName, packerExternalSwitchName)
 	if err != nil {
