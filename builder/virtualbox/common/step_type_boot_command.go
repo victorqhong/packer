@@ -33,7 +33,6 @@ type bootCommandTemplateData struct {
 //   <nothing>
 type StepTypeBootCommand struct {
 	BootCommand []string
-	VMName      string
 	Ctx         interpolate.Context
 }
 
@@ -46,7 +45,7 @@ func (s *StepTypeBootCommand) Run(state multistep.StateBag) multistep.StepAction
 	s.Ctx.Data = &bootCommandTemplateData{
 		"10.0.2.2",
 		httpPort,
-		s.VMName,
+		vmName,
 	}
 
 	ui.Say("Typing the boot command...")

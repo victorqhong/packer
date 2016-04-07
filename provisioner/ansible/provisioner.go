@@ -17,6 +17,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -124,6 +125,9 @@ func (p *Provisioner) Prepare(raws ...interface{}) error {
 		p.config.User = os.Getenv("USER")
 	}
 	if p.config.User == "" {
+		p.config.User = os.Getenv("USERNAME")
+	}
+	if p.config.User == "" {
 		errs = packer.MultiErrorAppend(errs, fmt.Errorf("user: could not determine current user from environment."))
 	}
 
@@ -134,16 +138,26 @@ func (p *Provisioner) Prepare(raws ...interface{}) error {
 }
 
 func (p *Provisioner) getVersion() error {
-	out, err := exec.Command(p.config.Command, "--version").Output()
+	var output []byte
+	var err error
+
+	if runtime.GOOS == "windows" && strings.HasSuffix(p.config.Command, ".sh") {
+		output, err = exec.Command("sh", p.config.Command, "--version").Output()
+	} else {
+		output, err = exec.Command(p.config.Command, "--version").Output()
+	}
+
 	if err != nil {
 		return err
 	}
 
+	out := string(output)
+
 	versionRe := regexp.MustCompile(`\w (\d+\.\d+[.\d+]*)`)
-	matches := versionRe.FindStringSubmatch(string(out))
+	matches := versionRe.FindStringSubmatch(out)
 	if matches == nil {
 		return fmt.Errorf(
-			"Could not find %s version in output:\n%s", p.config.Command, string(out))
+			"Could not find %s version in output:\n%s", p.config.Command, out)
 	}
 
 	version := matches[1]
