@@ -29,6 +29,7 @@ type Config struct {
 	awscommon.AMIConfig    `mapstructure:",squash"`
 	awscommon.BlockDevices `mapstructure:",squash"`
 	awscommon.RunConfig    `mapstructure:",squash"`
+	VolumeRunTags          map[string]string `mapstructure:"run_volume_tags"`
 
 	ctx interpolate.Context
 }
@@ -116,21 +117,25 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 			BlockDevices: b.config.BlockDevices,
 		},
 		&awscommon.StepRunSourceInstance{
-			Debug:                    b.config.PackerDebug,
-			ExpectedRootDevice:       "ebs",
-			SpotPrice:                b.config.SpotPrice,
-			SpotPriceProduct:         b.config.SpotPriceAutoProduct,
-			InstanceType:             b.config.InstanceType,
-			UserData:                 b.config.UserData,
-			UserDataFile:             b.config.UserDataFile,
-			SourceAMI:                b.config.SourceAmi,
-			IamInstanceProfile:       b.config.IamInstanceProfile,
-			SubnetId:                 b.config.SubnetId,
-			AssociatePublicIpAddress: b.config.AssociatePublicIpAddress,
-			EbsOptimized:             b.config.EbsOptimized,
-			AvailabilityZone:         b.config.AvailabilityZone,
-			BlockDevices:             b.config.BlockDevices,
-			Tags:                     b.config.RunTags,
+			Debug:                             b.config.PackerDebug,
+			ExpectedRootDevice:                "ebs",
+			SpotPrice:                         b.config.SpotPrice,
+			SpotPriceProduct:                  b.config.SpotPriceAutoProduct,
+			InstanceType:                      b.config.InstanceType,
+			UserData:                          b.config.UserData,
+			UserDataFile:                      b.config.UserDataFile,
+			SourceAMI:                         b.config.SourceAmi,
+			IamInstanceProfile:                b.config.IamInstanceProfile,
+			SubnetId:                          b.config.SubnetId,
+			AssociatePublicIpAddress:          b.config.AssociatePublicIpAddress,
+			EbsOptimized:                      b.config.EbsOptimized,
+			AvailabilityZone:                  b.config.AvailabilityZone,
+			BlockDevices:                      b.config.BlockDevices,
+			Tags:                              b.config.RunTags,
+			InstanceInitiatedShutdownBehavior: b.config.InstanceInitiatedShutdownBehavior,
+		},
+		&stepTagEBSVolumes{
+			VolumeRunTags: b.config.VolumeRunTags,
 		},
 		&awscommon.StepGetPassword{
 			Debug:   b.config.PackerDebug,
@@ -146,7 +151,10 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 				b.config.RunConfig.Comm.SSHUsername),
 		},
 		&common.StepProvision{},
-		&stepStopInstance{SpotPrice: b.config.SpotPrice},
+		&stepStopInstance{
+			SpotPrice:           b.config.SpotPrice,
+			DisableStopInstance: b.config.DisableStopInstance,
+		},
 		// TODO(mitchellh): verify works with spots
 		&stepModifyInstance{},
 		&awscommon.StepDeregisterAMI{

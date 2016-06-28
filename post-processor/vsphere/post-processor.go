@@ -1,10 +1,10 @@
 package vsphere
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 	"net/url"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -22,18 +22,20 @@ var builtins = map[string]string{
 type Config struct {
 	common.PackerConfig `mapstructure:",squash"`
 
-	Insecure     bool   `mapstructure:"insecure"`
-	Cluster      string `mapstructure:"cluster"`
-	Datacenter   string `mapstructure:"datacenter"`
-	Datastore    string `mapstructure:"datastore"`
-	DiskMode     string `mapstructure:"disk_mode"`
-	Host         string `mapstructure:"host"`
-	Password     string `mapstructure:"password"`
-	ResourcePool string `mapstructure:"resource_pool"`
-	Username     string `mapstructure:"username"`
-	VMFolder     string `mapstructure:"vm_folder"`
-	VMName       string `mapstructure:"vm_name"`
-	VMNetwork    string `mapstructure:"vm_network"`
+	Cluster      string   `mapstructure:"cluster"`
+	Datacenter   string   `mapstructure:"datacenter"`
+	Datastore    string   `mapstructure:"datastore"`
+	DiskMode     string   `mapstructure:"disk_mode"`
+	Host         string   `mapstructure:"host"`
+	Insecure     bool     `mapstructure:"insecure"`
+	Options      []string `mapstructure:"options"`
+	Overwrite    bool     `mapstructure:"overwrite"`
+	Password     string   `mapstructure:"password"`
+	ResourcePool string   `mapstructure:"resource_pool"`
+	Username     string   `mapstructure:"username"`
+	VMFolder     string   `mapstructure:"vm_folder"`
+	VMName       string   `mapstructure:"vm_name"`
+	VMNetwork    string   `mapstructure:"vm_network"`
 
 	ctx interpolate.Context
 }
@@ -119,28 +121,59 @@ func (p *PostProcessor) PostProcess(ui packer.Ui, artifact packer.Artifact) (pac
 		ovftool_uri += "/Resources/" + p.config.ResourcePool
 	}
 
-	args := []string{
-		fmt.Sprintf("--noSSLVerify=%t", p.config.Insecure),
-		"--acceptAllEulas",
-		fmt.Sprintf("--name=%s", p.config.VMName),
-		fmt.Sprintf("--datastore=%s", p.config.Datastore),
-		fmt.Sprintf("--diskMode=%s", p.config.DiskMode),
-		fmt.Sprintf("--network=%s", p.config.VMNetwork),
-		fmt.Sprintf("--vmFolder=%s", p.config.VMFolder),
-		fmt.Sprintf("%s", source),
-		fmt.Sprintf("%s", ovftool_uri),
+	ui.Message(fmt.Sprintf("Uploading %s to vSphere", source))
+
+	args, err := p.BuildArgs(source, ovftool_uri)
+	if err != nil {
+		ui.Message(fmt.Sprintf("Failed: %s\n", err))
 	}
 
 	ui.Message(fmt.Sprintf("Uploading %s to vSphere", source))
-	var out bytes.Buffer
+
 	log.Printf("Starting ovftool with parameters: %s", strings.Join(args, " "))
 	cmd := exec.Command("ovftool", args...)
-	cmd.Stdout = &out
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		return nil, false, fmt.Errorf("Failed: %s\nStdout: %s", err, out.String())
+		return nil, false, fmt.Errorf("Failed: %s\n", err)
 	}
 
-	ui.Message(fmt.Sprintf("%s", out.String()))
-
 	return artifact, false, nil
+}
+
+func (p *PostProcessor) BuildArgs(source, ovftool_uri string) ([]string, error) {
+	args := []string{
+		"--acceptAllEulas",
+		fmt.Sprintf(`--name=%s`, p.config.VMName),
+		fmt.Sprintf(`--datastore=%s`, p.config.Datastore),
+	}
+
+	if p.config.Insecure {
+		args = append(args, fmt.Sprintf(`--noSSLVerify=%t`, p.config.Insecure))
+	}
+
+	if p.config.DiskMode != "" {
+		args = append(args, fmt.Sprintf(`--diskMode=%s`, p.config.DiskMode))
+	}
+
+	if p.config.VMFolder != "" {
+		args = append(args, fmt.Sprintf(`--vmFolder=%s`, p.config.VMFolder))
+	}
+
+	if p.config.VMNetwork != "" {
+		args = append(args, fmt.Sprintf(`--network=%s`, p.config.VMNetwork))
+	}
+
+	if p.config.Overwrite == true {
+		args = append(args, "--overwrite")
+	}
+
+	if len(p.config.Options) > 0 {
+		args = append(args, p.config.Options...)
+	}
+
+	args = append(args, fmt.Sprintf(`%s`, source))
+	args = append(args, fmt.Sprintf(`%s`, ovftool_uri))
+
+	return args, nil
 }

@@ -83,12 +83,17 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 		&StepRunSourceServer{
 			Name:             b.config.ImageName,
 			SourceImage:      b.config.SourceImage,
+			SourceImageName:  b.config.SourceImageName,
 			SecurityGroups:   b.config.SecurityGroups,
 			Networks:         b.config.Networks,
 			AvailabilityZone: b.config.AvailabilityZone,
 			UserData:         b.config.UserData,
 			UserDataFile:     b.config.UserDataFile,
 			ConfigDrive:      b.config.ConfigDrive,
+		},
+		&StepGetPassword{
+			Debug: b.config.PackerDebug,
+			Comm:  &b.config.RunConfig.Comm,
 		},
 		&StepWaitForRackConnect{
 			Wait: b.config.RackconnectWait,
@@ -101,7 +106,8 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 			Config: &b.config.RunConfig.Comm,
 			Host: CommHost(
 				computeClient,
-				b.config.SSHInterface),
+				b.config.SSHInterface,
+				b.config.SSHIPVersion),
 			SSHConfig: SSHConfig(b.config.RunConfig.Comm.SSHUsername),
 		},
 		&common.StepProvision{},

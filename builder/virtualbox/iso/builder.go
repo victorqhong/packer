@@ -211,6 +211,11 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 		&vboxcommon.StepAttachGuestAdditions{
 			GuestAdditionsMode: b.config.GuestAdditionsMode,
 		},
+		&vboxcommon.StepConfigureVRDP{
+			VRDPBindAddress: b.config.VRDPBindAddress,
+			VRDPPortMin:     b.config.VRDPPortMin,
+			VRDPPortMax:     b.config.VRDPPortMax,
+		},
 		new(vboxcommon.StepAttachFloppy),
 		&vboxcommon.StepForwardSSH{
 			CommConfig:     &b.config.SSHConfig.Comm,
@@ -267,15 +272,18 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 	state := new(multistep.BasicStateBag)
 	state.Put("cache", cache)
 	state.Put("config", &b.config)
+	state.Put("debug", b.config.PackerDebug)
 	state.Put("driver", driver)
 	state.Put("hook", hook)
 	state.Put("ui", ui)
 
 	// Run
 	if b.config.PackerDebug {
+		pauseFn := common.MultistepDebugFn(ui)
+		state.Put("pauseFn", pauseFn)
 		b.runner = &multistep.DebugRunner{
 			Steps:   steps,
-			PauseFn: common.MultistepDebugFn(ui),
+			PauseFn: pauseFn,
 		}
 	} else {
 		b.runner = &multistep.BasicRunner{Steps: steps}
