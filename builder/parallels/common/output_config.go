@@ -3,7 +3,7 @@ package common
 import (
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 
 	"github.com/mitchellh/packer/common"
 	"github.com/mitchellh/packer/template/interpolate"
@@ -19,18 +19,21 @@ func (c *OutputConfig) Prepare(ctx *interpolate.Context, pc *common.PackerConfig
 	}
 
 	var errs []error
+	fmt.Println("OutputDirBefore=", c.OutputDir)
 
-	if path.IsAbs(c.OutputDir) {
-		c.OutputDir = path.Clean(c.OutputDir)
-	} else {
-		wd, err := os.Getwd()
+	if !filepath.IsAbs(c.OutputDir) {
+		outputDir, err := filepath.Abs(c.OutputDir)
 		if err != nil {
 			errs = append(errs, err)
+			return errs
+		} else {
+			c.OutputDir = outputDir
 		}
-		c.OutputDir = path.Clean(path.Join(wd, c.OutputDir))
 	}
 
 	if !pc.PackerForce {
+		fmt.Println("OutputDirAfter=", c.OutputDir)
+
 		if _, err := os.Stat(c.OutputDir); err == nil {
 			errs = append(errs, fmt.Errorf(
 				"Output directory '%s' already exists. It must not exist.", c.OutputDir))
