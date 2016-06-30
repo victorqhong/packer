@@ -1,6 +1,7 @@
 {
 	"ImportPath": "github.com/mitchellh/packer",
 	"GoVersion": "go1.6",
+	"GodepVersion": "v74",
 	"Deps": [
 		{
 			"ImportPath": "github.com/ActiveState/tail",
@@ -9,48 +10,57 @@
 		},
 		{
 			"ImportPath": "github.com/Azure/azure-sdk-for-go/arm/compute",
-			"Comment": "v1.2-334-g95361a2",
-			"Rev": "95361a2573b1fa92a00c5fc2707a80308483c6f9"
+			"Comment": "v2.1.1-beta",
+			"Rev": "a1883f7b98346e4908a6c25230c95a8a3026a10c"
 		},
 		{
 			"ImportPath": "github.com/Azure/azure-sdk-for-go/arm/network",
-			"Comment": "v1.2-334-g95361a2",
-			"Rev": "95361a2573b1fa92a00c5fc2707a80308483c6f9"
+			"Comment": "v2.1.1-beta",
+			"Rev": "a1883f7b98346e4908a6c25230c95a8a3026a10c"
 		},
 		{
 			"ImportPath": "github.com/Azure/azure-sdk-for-go/arm/resources/resources",
-			"Comment": "v1.2-334-g95361a2",
-			"Rev": "95361a2573b1fa92a00c5fc2707a80308483c6f9"
+			"Comment": "v2.1.1-beta",
+			"Rev": "a1883f7b98346e4908a6c25230c95a8a3026a10c"
+		},
+		{
+			"ImportPath": "github.com/Azure/azure-sdk-for-go/arm/resources/subscriptions",
+			"Comment": "v2.1.1-beta",
+			"Rev": "a1883f7b98346e4908a6c25230c95a8a3026a10c"
 		},
 		{
 			"ImportPath": "github.com/Azure/azure-sdk-for-go/arm/storage",
-			"Comment": "v1.2-334-g95361a2",
-			"Rev": "95361a2573b1fa92a00c5fc2707a80308483c6f9"
+			"Comment": "v2.1.1-beta",
+			"Rev": "a1883f7b98346e4908a6c25230c95a8a3026a10c"
 		},
 		{
 			"ImportPath": "github.com/Azure/azure-sdk-for-go/storage",
-			"Comment": "v1.2-334-g95361a2",
-			"Rev": "95361a2573b1fa92a00c5fc2707a80308483c6f9"
+			"Comment": "v2.1.1-beta",
+			"Rev": "a1883f7b98346e4908a6c25230c95a8a3026a10c"
 		},
 		{
 			"ImportPath": "github.com/Azure/go-autorest/autorest",
-			"Comment": "v3.0.0-32-gbebca45",
-			"Rev": "bebca455f60b24bf6a2459e9e862ff42da86f5e0"
+			"Comment": "v7.0.6",
+			"Rev": "451ba0760a7fd73d7175e2d3d1c3911020619561"
 		},
 		{
 			"ImportPath": "github.com/Azure/go-autorest/autorest/azure",
-			"Comment": "v3.0.0-32-gbebca45",
-			"Rev": "bebca455f60b24bf6a2459e9e862ff42da86f5e0"
+			"Comment": "v7.0.6",
+			"Rev": "451ba0760a7fd73d7175e2d3d1c3911020619561"
 		},
 		{
 			"ImportPath": "github.com/Azure/go-autorest/autorest/date",
-			"Comment": "v3.0.0-32-gbebca45",
-			"Rev": "bebca455f60b24bf6a2459e9e862ff42da86f5e0"
+			"Comment": "v7.0.6",
+			"Rev": "451ba0760a7fd73d7175e2d3d1c3911020619561"
 		},
 		{
 			"ImportPath": "github.com/Azure/go-autorest/autorest/to",
-			"Comment": "v3.0.0-32-gbebca45",
-			"Rev": "bebca455f60b24bf6a2459e9e862ff42da86f5e0"
+			"Comment": "v7.0.6",
+			"Rev": "451ba0760a7fd73d7175e2d3d1c3911020619561"
+		},
+		{
+			"ImportPath": "github.com/Azure/go-ntlmssp",
+			"Rev": "e0b63eb299a769ea4b04dadfe530f6074b277afb"
 		},
 		{
 			"ImportPath": "github.com/armon/go-radix",
@@ -196,6 +206,10 @@
 			"Rev": "36e9cfdd690967f4f690c6edcc9ffacd006014a0"
 		},
 		{
+			"ImportPath": "github.com/biogo/hts/bgzf",
+			"Rev": "50da7d4131a3b5c9d063932461cab4d1fafb20b0"
+		},
+		{
 			"ImportPath": "github.com/dgrijalva/jwt-go",
 			"Comment": "v2.4.0-11-gf219341",
 			"Rev": "f2193411bd642f7db03249fd79d5292c9b34916a"
@@ -228,13 +242,13 @@
 		},
 		{
 			"ImportPath": "github.com/hashicorp/atlas-go/archive",
-			"Comment": "20141209094003-90-g0008886",
-			"Rev": "0008886ebfa3b424bed03e2a5cbe4a2568ea0ff6"
+			"Comment": "20141209094003-92-g95fa852",
+			"Rev": "95fa852edca41c06c4ce526af4bb7dec4eaad434"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/atlas-go/v1",
-			"Comment": "20141209094003-90-g0008886",
-			"Rev": "0008886ebfa3b424bed03e2a5cbe4a2568ea0ff6"
+			"Comment": "20141209094003-92-g95fa852",
+			"Rev": "95fa852edca41c06c4ce526af4bb7dec4eaad434"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/errwrap",
@@ -251,6 +265,10 @@
 		{
 			"ImportPath": "github.com/hashicorp/go-multierror",
 			"Rev": "d30f09973e19c1dfcd120b2d9c4f168e68d6b5d5"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/go-rootcerts",
+			"Rev": "6bb64b370b90e7ef1fa532be9e591a81c3493e00"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/go-version",
@@ -495,6 +513,10 @@
 			"Rev": "1f22c0103821b9390939b6776727195525381532"
 		},
 		{
+			"ImportPath": "golang.org/x/crypto/md4",
+			"Rev": "1f22c0103821b9390939b6776727195525381532"
+		},
+		{
 			"ImportPath": "golang.org/x/crypto/ssh",
 			"Rev": "1f22c0103821b9390939b6776727195525381532"
 		},
@@ -544,19 +566,19 @@
 		},
 		{
 			"ImportPath": "google.golang.org/api/compute/v1",
-			"Rev": "ddff2aff599105a55549cf173852507dfa094b7f"
+			"Rev": "ff0a1ff302946b997eb1832381419d1f95143483"
 		},
 		{
 			"ImportPath": "google.golang.org/api/gensupport",
-			"Rev": "ddff2aff599105a55549cf173852507dfa094b7f"
+			"Rev": "ff0a1ff302946b997eb1832381419d1f95143483"
 		},
 		{
 			"ImportPath": "google.golang.org/api/googleapi",
-			"Rev": "ddff2aff599105a55549cf173852507dfa094b7f"
+			"Rev": "ff0a1ff302946b997eb1832381419d1f95143483"
 		},
 		{
 			"ImportPath": "google.golang.org/api/googleapi/internal/uritemplates",
-			"Rev": "ddff2aff599105a55549cf173852507dfa094b7f"
+			"Rev": "ff0a1ff302946b997eb1832381419d1f95143483"
 		},
 		{
 			"ImportPath": "google.golang.org/appengine",

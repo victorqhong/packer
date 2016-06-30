@@ -33,14 +33,14 @@ func NewStepDeleteOSDisk(client *AzureClient, ui packer.Ui) *StepDeleteOSDisk {
 }
 
 func (s *StepDeleteOSDisk) deleteBlob(storageContainerName string, blobName string) error {
-	return s.client.BlobStorageClient.DeleteBlob(storageContainerName, blobName)
+	return s.client.BlobStorageClient.DeleteBlob(storageContainerName, blobName, nil)
 }
 
 func (s *StepDeleteOSDisk) Run(state multistep.StateBag) multistep.StepAction {
 	s.say("Deleting the temporary OS disk ...")
 
 	var osDisk = state.Get(constants.ArmOSDiskVhd).(string)
-	s.say(fmt.Sprintf(" -> OS Disk             : '%s'", osDisk))
+	s.say(fmt.Sprintf(" -> OS Disk : '%s'", osDisk))
 
 	u, err := url.Parse(osDisk)
 	if err != nil {
@@ -54,13 +54,7 @@ func (s *StepDeleteOSDisk) Run(state multistep.StateBag) multistep.StepAction {
 	var blobName = strings.Join(xs[2:], "/")
 
 	err = s.delete(storageAccountName, blobName)
-	if err != nil {
-		state.Put(constants.Error, err)
-		s.error(err)
-
-		return multistep.ActionHalt
-	}
-	return multistep.ActionContinue
+	return processStepResult(err, s.error, state)
 }
 
 func (*StepDeleteOSDisk) Cleanup(multistep.StateBag) {

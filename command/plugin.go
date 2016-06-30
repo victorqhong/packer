@@ -21,6 +21,13 @@ import (
 	dockerbuilder "github.com/mitchellh/packer/builder/docker"
 	filebuilder "github.com/mitchellh/packer/builder/file"
 	googlecomputebuilder "github.com/mitchellh/packer/builder/googlecompute"
+	dockerimportpostprocessor "github.com/mitchellh/packer/post-processor/docker-import"
+	dockerpushpostprocessor "github.com/mitchellh/packer/post-processor/docker-push"
+	dockersavepostprocessor "github.com/mitchellh/packer/post-processor/docker-save"
+	dockertagpostprocessor "github.com/mitchellh/packer/post-processor/docker-tag"
+	filebuilder "github.com/mitchellh/packer/builder/file"
+	fileprovisioner "github.com/mitchellh/packer/provisioner/file"
+	googlecomputebuilder "github.com/mitchellh/packer/builder/googlecompute"
 	hypervbuilder "github.com/mitchellh/packer/builder/hyperv/iso"
 	nullbuilder "github.com/mitchellh/packer/builder/null"
 	openstackbuilder "github.com/mitchellh/packer/builder/openstack"
@@ -34,6 +41,7 @@ import (
 	amazonimportpostprocessor "github.com/mitchellh/packer/post-processor/amazon-import"
 	artificepostprocessor "github.com/mitchellh/packer/post-processor/artifice"
 	atlaspostprocessor "github.com/mitchellh/packer/post-processor/atlas"
+	checksumpostprocessor "github.com/mitchellh/packer/post-processor/checksum"
 	compresspostprocessor "github.com/mitchellh/packer/post-processor/compress"
 	dockerimportpostprocessor "github.com/mitchellh/packer/post-processor/docker-import"
 	dockerpushpostprocessor "github.com/mitchellh/packer/post-processor/docker-push"
@@ -103,6 +111,7 @@ var PostProcessors = map[string]packer.PostProcessor{
 	"amazon-import": new(amazonimportpostprocessor.PostProcessor),
 	"artifice":      new(artificepostprocessor.PostProcessor),
 	"atlas":         new(atlaspostprocessor.PostProcessor),
+	"checksum":      new(checksumpostprocessor.PostProcessor),
 	"compress":      new(compresspostprocessor.PostProcessor),
 	"docker-import": new(dockerimportpostprocessor.PostProcessor),
 	"docker-push":   new(dockerpushpostprocessor.PostProcessor),

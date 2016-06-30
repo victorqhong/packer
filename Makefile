@@ -1,4 +1,5 @@
 TEST?=$(shell go list ./... | grep -v vendor)
+VET?=$(shell ls -d */ | grep -v vendor | grep -v website)
 # Get the current full sha from git
 GITSHA:=$(shell git rev-parse HEAD)
 # Get the current local branch name from git (if we can, this may be blank)
@@ -15,8 +16,8 @@ bin: deps
 	@GO15VENDOREXPERIMENT=1 sh -c "$(CURDIR)/scripts/build.sh"
 
 releasebin: deps
-	@grep 'const VersionPrerelease = "dev"' version.go > /dev/null ; if [ $$? -eq 0 ]; then \
-		echo "ERROR: You must remove prerelease tags from version.go prior to release."; \
+	@grep 'const VersionPrerelease = "dev"' version/version.go > /dev/null ; if [ $$? -eq 0 ]; then \
+		echo "ERROR: You must remove prerelease tags from version/version.go prior to release."; \
 		exit 1; \
 	fi
 	@GO15VENDOREXPERIMENT=1 sh -c "$(CURDIR)/scripts/build.sh"
@@ -28,7 +29,6 @@ package:
 deps:
 	go get github.com/mitchellh/gox
 	go get golang.org/x/tools/cmd/stringer
-	go get golang.org/x/tools/cmd/vet
 	@go version | grep 1.4 ; if [ $$? -eq 0 ]; then \
 		echo "Installing godep and restoring dependencies"; \
 		go get github.com/tools/godep; \
@@ -36,8 +36,8 @@ deps:
 	fi
 
 dev: deps
-	@grep 'const VersionPrerelease = ""' version.go > /dev/null ; if [ $$? -eq 0 ]; then \
-		echo "ERROR: You must add prerelease tags to version.go prior to making a dev build."; \
+	@grep 'const VersionPrerelease = ""' version/version.go > /dev/null ; if [ $$? -eq 0 ]; then \
+		echo "ERROR: You must add prerelease tags to version/version.go prior to making a dev build."; \
 		exit 1; \
 	fi
 	@PACKER_DEV=1 GO15VENDOREXPERIMENT=1 sh -c "$(CURDIR)/scripts/build.sh"
@@ -56,8 +56,8 @@ generate: deps
 	go fmt command/plugin.go
 
 test: deps
-	@go test $(TEST) $(TESTARGS) -timeout=30s
-	@go vet $(TEST) ; if [ $$? -eq 1 ]; then \
+	@go test $(TEST) $(TESTARGS) -timeout=2m
+	@go tool vet $(VET)  ; if [ $$? -eq 1 ]; then \
 		echo "ERROR: Vet found problems in the code."; \
 		exit 1; \
 	fi
@@ -68,12 +68,11 @@ testacc: deps generate
 	PACKER_ACC=1 go test -v $(TEST) $(TESTARGS) -timeout=45m
 
 testrace: deps
-	@go test -race $(TEST) $(TESTARGS) -timeout=1m
+	@go test -race $(TEST) $(TESTARGS) -timeout=2m
 
 updatedeps:
 	go get -u github.com/mitchellh/gox
 	go get -u golang.org/x/tools/cmd/stringer
-	go get -u golang.org/x/tools/cmd/vet
 	@echo "INFO: Packer deps are managed by godep. See CONTRIBUTING.md"
 
 # This is used to add new dependencies to packer. If you are submitting a PR

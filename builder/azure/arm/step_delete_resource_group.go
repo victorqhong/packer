@@ -7,13 +7,14 @@ import (
 	"fmt"
 
 	"github.com/mitchellh/multistep"
+	"github.com/mitchellh/packer/builder/azure/common"
 	"github.com/mitchellh/packer/builder/azure/common/constants"
 	"github.com/mitchellh/packer/packer"
 )
 
 type StepDeleteResourceGroup struct {
 	client *AzureClient
-	delete func(resourceGroupName string) error
+	delete func(resourceGroupName string, cancelCh <-chan struct{}) error
 	say    func(message string)
 	error  func(e error)
 }
@@ -29,32 +30,26 @@ func NewStepDeleteResourceGroup(client *AzureClient, ui packer.Ui) *StepDeleteRe
 	return step
 }
 
-func (s *StepDeleteResourceGroup) deleteResourceGroup(resourceGroupName string) error {
-	res, err := s.client.GroupsClient.Delete(resourceGroupName)
-	if err != nil {
-		return err
-	}
+func (s *StepDeleteResourceGroup) deleteResourceGroup(resourceGroupName string, cancelCh <-chan struct{}) error {
+	_, err := s.client.GroupsClient.Delete(resourceGroupName, cancelCh)
 
-	s.client.GroupsClient.PollAsNeeded(res.Response)
-	return nil
+	return err
 }
 
 func (s *StepDeleteResourceGroup) Run(state multistep.StateBag) multistep.StepAction {
 	s.say("Deleting resource group ...")
 
 	var resourceGroupName = state.Get(constants.ArmResourceGroupName).(string)
-
 	s.say(fmt.Sprintf(" -> ResourceGroupName : '%s'", resourceGroupName))
 
-	err := s.delete(resourceGroupName)
-	if err != nil {
-		state.Put(constants.Error, err)
-		s.error(err)
+	result := common.StartInterruptibleTask(
+		func() bool { return common.IsStateCancelled(state) },
+		func(cancelCh <-chan struct{}) error { return s.delete(resourceGroupName, cancelCh) })
 
-		return multistep.ActionHalt
-	}
+	stepAction := processInterruptibleResult(result, s.error, state)
+	state.Put(constants.ArmIsResourceGroupCreated, false)
 
-	return multistep.ActionContinue
+	return stepAction
 }
 
 func (*StepDeleteResourceGroup) Cleanup(multistep.StateBag) {

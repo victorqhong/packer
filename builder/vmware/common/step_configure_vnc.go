@@ -7,8 +7,8 @@ import (
 	"math/rand"
 	"net"
 	"os"
-	"strconv"
 	"runtime"
+	"strconv"
 
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/packer"
@@ -23,15 +23,16 @@ import (
 // Produces:
 //   vnc_port uint - The port that VNC is configured to listen on.
 type StepConfigureVNC struct {
-	VNCPortMin uint
-	VNCPortMax uint
+	VNCBindAddress string
+	VNCPortMin     uint
+	VNCPortMax     uint
 }
 
 type VNCAddressFinder interface {
-	VNCAddress(uint, uint) (string, uint, error)
+	VNCAddress(string, uint, uint) (string, uint, error)
 }
 
-func (StepConfigureVNC) VNCAddress(portMin, portMax uint) (string, uint, error) {
+func (StepConfigureVNC) VNCAddress(vncBindAddress string, portMin, portMax uint) (string, uint, error) {
 	// Find an open VNC port. Note that this can still fail later on
 	// because we have to release the port at some point. But this does its
 	// best.
@@ -45,14 +46,13 @@ func (StepConfigureVNC) VNCAddress(portMin, portMax uint) (string, uint, error) 
 		}
 
 		log.Printf("Trying port: %d", vncPort)
-		l, err := net.Listen("tcp", fmt.Sprintf(":%d", vncPort))
+		l, err := net.Listen("tcp", fmt.Sprintf("%s:%d", vncBindAddress, vncPort))
 		if err == nil {
 			defer l.Close()
 			break
 		}
 	}
-	
-	return "127.0.0.1", vncPort, nil
+	return vncBindAddress, vncPort, nil
 }
 
 func (s *StepConfigureVNC) Run(state multistep.StateBag) multistep.StepAction {
@@ -79,7 +79,15 @@ func (s *StepConfigureVNC) Run(state multistep.StateBag) multistep.StepAction {
 	vmxData := ParseVMX(string(vmxBytes))
 	vmxData["remotedisplay.vnc.enabled"] = "TRUE"
 
-	if vncPortString, ok := vmxData["remotedisplay.vnc.port"]; ok {
+	if len(s.VNCBindAddress) > 0 {
+		log.Printf("VNC ip specified: %d", s.VNCBindAddress)
+		vmxData["remotedisplay.vnc.ip"] = fmt.Sprintf("%s", s.VNCBindAddress)
+		state.Put("vnc_ip", s.VNCBindAddress)
+	} else if vncIpString, ok := vmxData["remotedisplay.vnc.ip"]; ok {
+		s.VNCBindAddress = vncIpString
+		log.Printf("VNC ip specified: %d", s.VNCBindAddress)
+		state.Put("vnc_ip", s.VNCBindAddress)
+	} else {
 		var ipFinder HostIPFinder
 		if finder, ok := driver.(HostIPFinder); ok {
 			ipFinder = finder
@@ -88,28 +96,34 @@ func (s *StepConfigureVNC) Run(state multistep.StateBag) multistep.StepAction {
 		} else {
 			ipFinder = &IfconfigIPFinder{Device: "vmnet8"}
 		}
-	
-		vncIp, err := ipFinder.HostIP()
-		if err != nil {
+
+		if vncIp, err := ipFinder.HostIP(); err == nil {
+			s.VNCBindAddress = vncIp
+			log.Printf("VNC ip detected: %d", s.VNCBindAddress)
+			vmxData["remotedisplay.vnc.ip"] = fmt.Sprintf("%s", s.VNCBindAddress)
+			state.Put("vnc_ip", s.VNCBindAddress)
+		} else {
 			err := fmt.Errorf("Error detecting host IP: %s", err)
 			state.Put("error", err)
 			ui.Error(err.Error())
 			return multistep.ActionHalt
 		}
+	}
+
+	if vncPortString, ok := vmxData["remotedisplay.vnc.port"]; ok {
 
 		if vncPortInt, err := strconv.Atoi(vncPortString); err == nil {
-		    vncPort := uint(vncPortInt)
+			vncPort := uint(vncPortInt)
 
 			log.Printf("VNC port specified: %d", vncPort)
-	
+
 			state.Put("vnc_port", vncPort)
-			state.Put("vnc_ip", vncIp)	
 
 		} else {
 			state.Put("error", err)
 			ui.Error(err.Error())
 			return multistep.ActionHalt
-		}				
+		}
 	} else {
 		var vncFinder VNCAddressFinder
 		if finder, ok := driver.(VNCAddressFinder); ok {
@@ -118,7 +132,7 @@ func (s *StepConfigureVNC) Run(state multistep.StateBag) multistep.StepAction {
 			vncFinder = s
 		}
 		log.Printf("Looking for available port between %d and %d", s.VNCPortMin, s.VNCPortMax)
-		vncIp, vncPort, err := vncFinder.VNCAddress(s.VNCPortMin, s.VNCPortMax)
+		_, vncPort, err := vncFinder.VNCAddress(s.VNCBindAddress, s.VNCPortMin, s.VNCPortMax)
 		if err != nil {
 			state.Put("error", err)
 			ui.Error(err.Error())
@@ -126,11 +140,9 @@ func (s *StepConfigureVNC) Run(state multistep.StateBag) multistep.StepAction {
 		}
 
 		log.Printf("Found available VNC port: %d", vncPort)
-		
+
 		vmxData["remotedisplay.vnc.port"] = fmt.Sprintf("%d", vncPort)
-		
 		state.Put("vnc_port", vncPort)
-		state.Put("vnc_ip", vncIp)
 	}
 
 	if err := WriteVMX(vmxPath, vmxData); err != nil {

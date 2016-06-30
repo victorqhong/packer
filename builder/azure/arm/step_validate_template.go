@@ -13,26 +13,28 @@ import (
 
 type StepValidateTemplate struct {
 	client   *AzureClient
-	validate func(resourceGroupName string, deploymentName string, templateParameters *TemplateParameters) error
+	validate func(resourceGroupName string, deploymentName string) error
 	say      func(message string)
 	error    func(e error)
+	config   *Config
+	factory  templateFactoryFunc
 }
 
-func NewStepValidateTemplate(client *AzureClient, ui packer.Ui) *StepValidateTemplate {
+func NewStepValidateTemplate(client *AzureClient, ui packer.Ui, config *Config, factory templateFactoryFunc) *StepValidateTemplate {
 	var step = &StepValidateTemplate{
-		client: client,
-		say:    func(message string) { ui.Say(message) },
-		error:  func(e error) { ui.Error(e.Error()) },
+		client:  client,
+		say:     func(message string) { ui.Say(message) },
+		error:   func(e error) { ui.Error(e.Error()) },
+		config:  config,
+		factory: factory,
 	}
 
 	step.validate = step.validateTemplate
 	return step
 }
 
-func (s *StepValidateTemplate) validateTemplate(resourceGroupName string, deploymentName string, templateParameters *TemplateParameters) error {
-	factory := newDeploymentFactory(Linux)
-	deployment, err := factory.create(*templateParameters)
-
+func (s *StepValidateTemplate) validateTemplate(resourceGroupName string, deploymentName string) error {
+	deployment, err := s.factory(s.config)
 	if err != nil {
 		return err
 	}
@@ -46,20 +48,12 @@ func (s *StepValidateTemplate) Run(state multistep.StateBag) multistep.StepActio
 
 	var resourceGroupName = state.Get(constants.ArmResourceGroupName).(string)
 	var deploymentName = state.Get(constants.ArmDeploymentName).(string)
-	var templateParameters = state.Get(constants.ArmTemplateParameters).(*TemplateParameters)
 
 	s.say(fmt.Sprintf(" -> ResourceGroupName : '%s'", resourceGroupName))
 	s.say(fmt.Sprintf(" -> DeploymentName    : '%s'", deploymentName))
 
-	err := s.validate(resourceGroupName, deploymentName, templateParameters)
-	if err != nil {
-		state.Put(constants.Error, err)
-		s.error(err)
-
-		return multistep.ActionHalt
-	}
-
-	return multistep.ActionContinue
+	err := s.validate(resourceGroupName, deploymentName)
+	return processStepResult(err, s.error, state)
 }
 
 func (*StepValidateTemplate) Cleanup(multistep.StateBag) {

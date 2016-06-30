@@ -4,11 +4,13 @@
 package arm
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/mitchellh/packer/builder/azure/common/constants"
+	"github.com/mitchellh/packer/packer"
 )
 
 // List of configuration parameters that are required by the ARM builder.
@@ -21,9 +23,10 @@ var requiredConfigValues = []string{
 	"image_publisher",
 	"image_sku",
 	"location",
+	"os_type",
 	"storage_account",
+	"resource_group_name",
 	"subscription_id",
-	"tenant_id",
 }
 
 func TestConfigShouldProvideReasonableDefaultValues(t *testing.T) {
@@ -41,21 +44,24 @@ func TestConfigShouldProvideReasonableDefaultValues(t *testing.T) {
 	if c.VMSize == "" {
 		t.Errorf("Expected 'VMSize' to be populated, but it was empty!")
 	}
+
+	if c.ObjectID != "" {
+		t.Errorf("Expected 'ObjectID' to be nil, but it was '%s'!", c.ObjectID)
+	}
 }
 
 func TestConfigShouldBeAbleToOverrideDefaultedValues(t *testing.T) {
-	builderValues := make(map[string]string)
-
-	// Populate the dictionary with all of the required values.
-	for _, v := range requiredConfigValues {
-		builderValues[v] = "--some-value--"
-	}
-
+	builderValues := getArmBuilderConfiguration()
 	builderValues["ssh_password"] = "override_password"
 	builderValues["ssh_username"] = "override_username"
 	builderValues["vm_size"] = "override_vm_size"
+	builderValues["communicator"] = "ssh"
 
-	c, _, _ := newConfig(getArmBuilderConfigurationFromMap(builderValues), getPackerConfiguration())
+	c, _, err := newConfig(builderValues, getPackerConfiguration())
+
+	if err != nil {
+		t.Fatalf("newConfig failed: %s", err)
+	}
 
 	if c.Password != "override_password" {
 		t.Errorf("Expected 'Password' to be set to 'override_password', but found '%s'!", c.Password)
@@ -74,7 +80,7 @@ func TestConfigShouldBeAbleToOverrideDefaultedValues(t *testing.T) {
 	}
 
 	if c.VMSize != "override_vm_size" {
-		t.Errorf("Expected 'vm_size' to be set to 'override_username', but found '%s'!", c.VMSize)
+		t.Errorf("Expected 'vm_size' to be set to 'override_vm_size', but found '%s'!", c.VMSize)
 	}
 }
 
@@ -86,16 +92,125 @@ func TestConfigShouldDefaultVMSizeToStandardA1(t *testing.T) {
 	}
 }
 
-func TestUserShouldProvideRequiredValues(t *testing.T) {
-	builderValues := make(map[string]string)
+func TestConfigShouldDefaultImageVersionToLatest(t *testing.T) {
+	c, _, _ := newConfig(getArmBuilderConfiguration(), getPackerConfiguration())
 
-	// Populate the dictionary with all of the required values.
-	for _, v := range requiredConfigValues {
-		builderValues[v] = "--some-value--"
+	if c.ImageVersion != "latest" {
+		t.Errorf("Expected 'ImageVersion' to default to 'latest', but got '%s'.", c.ImageVersion)
+	}
+}
+
+func TestConfigShouldNotDefaultImageVersionIfCustomImage(t *testing.T) {
+	config := map[string]string{
+		"capture_name_prefix":    "ignore",
+		"capture_container_name": "ignore",
+		"location":               "ignore",
+		"image_url":              "ignore",
+		"storage_account":        "ignore",
+		"resource_group_name":    "ignore",
+		"subscription_id":        "ignore",
+		"os_type":                constants.Target_Linux,
+		"communicator":           "none",
 	}
 
+	c, _, _ := newConfig(config, getPackerConfiguration())
+	if c.ImageVersion != "" {
+		t.Errorf("Expected 'ImageVersion' to empty, but got '%s'.", c.ImageVersion)
+	}
+}
+
+func TestConfigShouldRejectCustomImageAndMarketPlace(t *testing.T) {
+	config := map[string]string{
+		"capture_name_prefix":    "ignore",
+		"capture_container_name": "ignore",
+		"location":               "ignore",
+		"image_url":              "ignore",
+		"resource_group_name":    "ignore",
+		"storage_account":        "ignore",
+		"subscription_id":        "ignore",
+		"os_type":                constants.Target_Linux,
+		"communicator":           "none",
+	}
+	packerConfiguration := getPackerConfiguration()
+	marketPlace := []string{"image_publisher", "image_offer", "image_sku"}
+
+	for _, x := range marketPlace {
+		config[x] = "ignore"
+		_, _, err := newConfig(config, packerConfiguration)
+		if err == nil {
+			t.Errorf("Expected Config to reject image_url and %s, but it did not", x)
+		}
+	}
+}
+
+func TestConfigShouldDefaultToPublicCloud(t *testing.T) {
+	c, _, _ := newConfig(getArmBuilderConfiguration(), getPackerConfiguration())
+
+	if c.CloudEnvironmentName != "Public" {
+		t.Errorf("Expected 'CloudEnvironmentName' to default to 'Public', but got '%s'.", c.CloudEnvironmentName)
+	}
+
+	if c.cloudEnvironment == nil || c.cloudEnvironment.Name != "AzurePublicCloud" {
+		t.Errorf("Expected 'cloudEnvironment' to be set to 'AzurePublicCloud', but got '%s'.", c.cloudEnvironment)
+	}
+}
+
+func TestConfigInstantiatesCorrectAzureEnvironment(t *testing.T) {
+	config := map[string]string{
+		"capture_name_prefix":    "ignore",
+		"capture_container_name": "ignore",
+		"image_offer":            "ignore",
+		"image_publisher":        "ignore",
+		"image_sku":              "ignore",
+		"location":               "ignore",
+		"storage_account":        "ignore",
+		"resource_group_name":    "ignore",
+		"subscription_id":        "ignore",
+		"os_type":                constants.Target_Linux,
+		"communicator":           "none",
+	}
+
+	// user input is fun :)
+	var table = []struct {
+		name            string
+		environmentName string
+	}{
+		{"China", "AzureChinaCloud"},
+		{"ChinaCloud", "AzureChinaCloud"},
+		{"AzureChinaCloud", "AzureChinaCloud"},
+		{"aZuReChInAcLoUd", "AzureChinaCloud"},
+
+		{"USGovernment", "AzureUSGovernmentCloud"},
+		{"USGovernmentCloud", "AzureUSGovernmentCloud"},
+		{"AzureUSGovernmentCloud", "AzureUSGovernmentCloud"},
+		{"aZuReUsGoVeRnMeNtClOuD", "AzureUSGovernmentCloud"},
+
+		{"Public", "AzurePublicCloud"},
+		{"PublicCloud", "AzurePublicCloud"},
+		{"AzurePublicCloud", "AzurePublicCloud"},
+		{"aZuRePuBlIcClOuD", "AzurePublicCloud"},
+	}
+
+	packerConfiguration := getPackerConfiguration()
+
+	for _, x := range table {
+		config["cloud_environment_name"] = x.name
+		c, _, err := newConfig(config, packerConfiguration)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if c.cloudEnvironment == nil || c.cloudEnvironment.Name != x.environmentName {
+			t.Errorf("Expected 'cloudEnvironment' to be set to '%s', but got '%s'.", x.environmentName, c.cloudEnvironment)
+		}
+	}
+}
+
+func TestUserShouldProvideRequiredValues(t *testing.T) {
+	builderValues := getArmBuilderConfiguration()
+
 	// Ensure we can successfully create a config.
-	_, _, err := newConfig(getArmBuilderConfigurationFromMap(builderValues), getPackerConfiguration())
+	_, _, err := newConfig(builderValues, getPackerConfiguration())
 	if err != nil {
 		t.Errorf("Expected configuration creation to succeed, but it failed!\n")
 		t.Fatalf(" -> %+v\n", builderValues)
@@ -103,15 +218,16 @@ func TestUserShouldProvideRequiredValues(t *testing.T) {
 
 	// Take away a required element, and ensure construction fails.
 	for _, v := range requiredConfigValues {
+		originalValue := builderValues[v]
 		delete(builderValues, v)
 
-		_, _, err := newConfig(getArmBuilderConfigurationFromMap(builderValues), getPackerConfiguration())
+		_, _, err := newConfig(builderValues, getPackerConfiguration())
 		if err == nil {
 			t.Errorf("Expected configuration creation to fail, but it succeeded!\n")
 			t.Fatalf(" -> %+v\n", builderValues)
 		}
 
-		builderValues[v] = "--some-value--"
+		builderValues[v] = originalValue
 	}
 }
 
@@ -136,47 +252,6 @@ func TestSystemShouldDefineRuntimeValues(t *testing.T) {
 
 	if c.tmpOSDiskName == "" {
 		t.Errorf("Expected tmpOSDiskName to not be empty, but it was '%s'!", c.tmpOSDiskName)
-	}
-}
-
-func TestConfigShouldTransformToTemplateParameters(t *testing.T) {
-	c, _, _ := newConfig(getArmBuilderConfiguration(), getPackerConfiguration())
-	templateParameters := c.toTemplateParameters()
-
-	if templateParameters.AdminUsername.Value != c.UserName {
-		t.Errorf("Expected AdminUsername to be equal to config's AdminUsername, but they were '%s' and '%s' respectively.", templateParameters.AdminUsername.Value, c.UserName)
-	}
-
-	if templateParameters.DnsNameForPublicIP.Value != c.tmpComputeName {
-		t.Errorf("Expected DnsNameForPublicIP to be equal to config's DnsNameForPublicIP, but they were '%s' and '%s' respectively.", templateParameters.DnsNameForPublicIP.Value, c.tmpComputeName)
-	}
-
-	if templateParameters.ImageOffer.Value != c.ImageOffer {
-		t.Errorf("Expected ImageOffer to be equal to config's ImageOffer, but they were '%s' and '%s' respectively.", templateParameters.ImageOffer.Value, c.ImageOffer)
-	}
-
-	if templateParameters.ImagePublisher.Value != c.ImagePublisher {
-		t.Errorf("Expected ImagePublisher to be equal to config's ImagePublisher, but they were '%s' and '%s' respectively.", templateParameters.ImagePublisher.Value, c.ImagePublisher)
-	}
-
-	if templateParameters.ImageSku.Value != c.ImageSku {
-		t.Errorf("Expected ImageSku to be equal to config's ImageSku, but they were '%s' and '%s' respectively.", templateParameters.ImageSku.Value, c.ImageSku)
-	}
-
-	if templateParameters.OSDiskName.Value != c.tmpOSDiskName {
-		t.Errorf("Expected OSDiskName to be equal to config's OSDiskName, but they were '%s' and '%s' respectively.", templateParameters.OSDiskName.Value, c.tmpOSDiskName)
-	}
-
-	if templateParameters.StorageAccountName.Value != c.StorageAccount {
-		t.Errorf("Expected StorageAccountName to be equal to config's StorageAccountName, but they were '%s' and '%s' respectively.", templateParameters.StorageAccountName.Value, c.StorageAccount)
-	}
-
-	if templateParameters.VMName.Value != c.tmpComputeName {
-		t.Errorf("Expected VMName to be equal to config's VMName, but they were '%s' and '%s' respectively.", templateParameters.VMName.Value, c.tmpComputeName)
-	}
-
-	if templateParameters.VMSize.Value != c.VMSize {
-		t.Errorf("Expected VMSize to be equal to config's VMSize, but they were '%s' and '%s' respectively.", templateParameters.VMSize.Value, c.VMSize)
 	}
 }
 
@@ -216,58 +291,217 @@ func TestConfigShouldSupportPackersConfigElements(t *testing.T) {
 	}
 }
 
-func getArmBuilderConfiguration() interface{} {
-	m := make(map[string]string)
-	for _, v := range requiredConfigValues {
-		m[v] = fmt.Sprintf("%s00", v)
+func TestWinRMConfigShouldSetRoundTripDecorator(t *testing.T) {
+	config := getArmBuilderConfiguration()
+	config["communicator"] = "winrm"
+	config["winrm_username"] = "username"
+	config["winrm_password"] = "password"
+
+	c, _, err := newConfig(config, getPackerConfiguration())
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	return getArmBuilderConfigurationFromMap(m)
+	if c.Comm.WinRMTransportDecorator == nil {
+		t.Errorf("Expected WinRMTransportDecorator to be set, but it was nil")
+	}
 }
 
-func getArmBuilderConfigurationFromMap(kvp map[string]string) interface{} {
-	bs := bytes.NewBufferString("{")
-
-	for k, v := range kvp {
-		bs.WriteString(fmt.Sprintf("\"%s\": \"%s\",\n", k, v))
+func TestUserDeviceLoginIsEnabledForLinux(t *testing.T) {
+	config := map[string]string{
+		"capture_name_prefix":    "ignore",
+		"capture_container_name": "ignore",
+		"image_offer":            "ignore",
+		"image_publisher":        "ignore",
+		"image_sku":              "ignore",
+		"location":               "ignore",
+		"storage_account":        "ignore",
+		"resource_group_name":    "ignore",
+		"subscription_id":        "ignore",
+		"os_type":                constants.Target_Linux,
+		"communicator":           "none",
 	}
 
-	// remove the trailing ",\n" because JSON
-	bs.Truncate(bs.Len() - 2)
-	bs.WriteString("}")
+	_, _, err := newConfig(config, getPackerConfiguration())
+	if err != nil {
+		t.Fatalf("failed to use device login for Linux: %s", err)
+	}
+}
 
-	var config interface{}
-	json.Unmarshal([]byte(bs.String()), &config)
+func TestUseDeviceLoginIsDisabledForWindows(t *testing.T) {
+	config := map[string]string{
+		"capture_name_prefix":    "ignore",
+		"capture_container_name": "ignore",
+		"image_offer":            "ignore",
+		"image_publisher":        "ignore",
+		"image_sku":              "ignore",
+		"location":               "ignore",
+		"storage_account":        "ignore",
+		"resource_group_name":    "ignore",
+		"subscription_id":        "ignore",
+		"os_type":                constants.Target_Windows,
+		"communicator":           "none",
+	}
 
-	return config
+	_, _, err := newConfig(config, getPackerConfiguration())
+	if err == nil {
+		t.Fatalf("Expected test to fail, but it succeeded")
+	}
+
+	multiError, _ := err.(*packer.MultiError)
+	if len(multiError.Errors) != 2 {
+		t.Errorf("Expected to find 2 errors, but found %d errors", len(multiError.Errors))
+	}
+
+	if !strings.Contains(err.Error(), "client_id must be specified") {
+		t.Errorf("Expected to find error for 'client_id must be specified")
+	}
+	if !strings.Contains(err.Error(), "client_secret must be specified") {
+		t.Errorf("Expected to find error for 'client_secret must be specified")
+	}
+}
+
+func TestConfigShouldRejectMalformedCaptureNamePrefix(t *testing.T) {
+	config := map[string]string{
+		"capture_container_name": "ignore",
+		"image_offer":            "ignore",
+		"image_publisher":        "ignore",
+		"image_sku":              "ignore",
+		"location":               "ignore",
+		"storage_account":        "ignore",
+		"resource_group_name":    "ignore",
+		"subscription_id":        "ignore",
+		// Does not matter for this test case, just pick one.
+		"os_type": constants.Target_Linux,
+	}
+
+	wellFormedCaptureNamePrefix := []string{
+		"packer",
+		"AbcdefghijklmnopqrstuvwX",
+		"hypen-hypen",
+		"0leading-number",
+		"v1.core.local",
+	}
+
+	for _, x := range wellFormedCaptureNamePrefix {
+		config["capture_name_prefix"] = x
+		_, _, err := newConfig(config, getPackerConfiguration())
+
+		if err != nil {
+			t.Errorf("Expected test to pass, but it failed with the well-formed capture_name_prefix set to %q.", x)
+		}
+	}
+
+	malformedCaptureNamePrefix := []string{
+		"-leading-hypen",
+		"trailing-hypen-",
+		"trailing-period.",
+		"_leading-underscore",
+		"punc-!@#$%^&*()_+-=-punc",
+		"There-are-too-many-characters-in-the-name-and-the-limit-is-twenty-four",
+	}
+
+	for _, x := range malformedCaptureNamePrefix {
+		config["capture_name_prefix"] = x
+		_, _, err := newConfig(config, getPackerConfiguration())
+
+		if err == nil {
+			t.Errorf("Expected test to fail, but it succeeded with the malformed capture_name_prefix set to %q.", x)
+		}
+	}
+}
+
+func TestConfigShouldRejectMalformedCaptureContainerName(t *testing.T) {
+	config := map[string]string{
+		"capture_name_prefix": "ignore",
+		"image_offer":         "ignore",
+		"image_publisher":     "ignore",
+		"image_sku":           "ignore",
+		"location":            "ignore",
+		"storage_account":     "ignore",
+		"resource_group_name": "ignore",
+		"subscription_id":     "ignore",
+		// Does not matter for this test case, just pick one.
+		"os_type": constants.Target_Linux,
+	}
+
+	wellFormedCaptureContainerName := []string{
+		"0leading",
+		"aleading",
+		"hype-hypen",
+		"abcdefghijklmnopqrstuvwxyz0123456789-abcdefghijklmnopqrstuvwxyz", // 63 characters
+	}
+
+	for _, x := range wellFormedCaptureContainerName {
+		config["capture_container_name"] = x
+		_, _, err := newConfig(config, getPackerConfiguration())
+
+		if err != nil {
+			t.Errorf("Expected test to pass, but it failed with the well-formed capture_container_name set to %q.", x)
+		}
+	}
+
+	malformedCaptureContainerName := []string{
+		"No-Capitals",
+		"double--hypens",
+		"-leading-hypen",
+		"trailing-hypen-",
+		"punc-!@#$%^&*()_+-=-punc",
+		"there-are-over-63-characters-in-this-string-and-that-is-a-bad-container-name",
+	}
+
+	for _, x := range malformedCaptureContainerName {
+		config["capture_container_name"] = x
+		_, _, err := newConfig(config, getPackerConfiguration())
+
+		if err == nil {
+			t.Errorf("Expected test to fail, but it succeeded with the malformed capture_container_name set to %q.", x)
+		}
+	}
+}
+
+func getArmBuilderConfiguration() map[string]string {
+	m := make(map[string]string)
+	for _, v := range requiredConfigValues {
+		m[v] = fmt.Sprintf("ignored00")
+	}
+
+	m["communicator"] = "none"
+	m["os_type"] = constants.Target_Linux
+	return m
+}
+
+func getArmBuilderConfigurationWithWindows() map[string]string {
+	m := make(map[string]string)
+	for _, v := range requiredConfigValues {
+		m[v] = fmt.Sprintf("ignored00")
+	}
+
+	m["object_id"] = "ignored00"
+	m["tenant_id"] = "ignored00"
+	m["winrm_username"] = "ignored00"
+	m["communicator"] = "winrm"
+	m["os_type"] = constants.Target_Windows
+	return m
 }
 
 func getPackerConfiguration() interface{} {
-	var doc = `{
-		"packer_user_variables": {
-			"sa": "my_storage_account"
-		},
-		"packer_build_name": "azure-arm-vm",
-		"packer_builder_type": "azure-arm-vm",
-		"packer_debug": "false",
-		"packer_force": "false",
-		"packer_template_path": "/home/jenkins/azure-arm-vm/template.json"
-	}`
-
-	var config interface{}
-	json.Unmarshal([]byte(doc), &config)
+	config := map[string]interface{}{
+		"packer_build_name":    "azure-arm-vm",
+		"packer_builder_type":  "azure-arm-vm",
+		"packer_debug":         "false",
+		"packer_force":         "false",
+		"packer_template_path": "/home/jenkins/azure-arm-vm/template.json",
+	}
 
 	return config
 }
 
-func getPackerCommunicatorConfiguration() interface{} {
-	var doc = `{
-		"ssh_timeout": "1h",
-		"winrm_timeout": "2h"
-	}`
-
-	var config interface{}
-	json.Unmarshal([]byte(doc), &config)
+func getPackerCommunicatorConfiguration() map[string]string {
+	config := map[string]string{
+		"ssh_timeout":   "1h",
+		"winrm_timeout": "2h",
+	}
 
 	return config
 }

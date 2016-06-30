@@ -28,11 +28,11 @@ type StepCreateCert struct {
 func (s *StepCreateCert) Run(state multistep.StateBag) multistep.StepAction {
 	ui := state.Get("ui").(packer.Ui)
 
-	ui.Say("Creating Temporary Certificate...")
+	ui.Say("Creating temporary certificate...")
 
 	err := s.createCert(state)
 	if err != nil {
-		err := fmt.Errorf("Error Creating Temporary Certificate: %s", err)
+		err := fmt.Errorf("Error creating temporary certificate: %s", err)
 		state.Put("error", err)
 		ui.Error(err.Error())
 		return multistep.ActionHalt
@@ -59,7 +59,7 @@ func (s *StepCreateCert) createCert(state multistep.StateBag) error {
 		Bytes: x509.MarshalPKCS1PrivateKey(priv),
 	}))
 
-	// Set the private key in the statebag for later
+	// Set the private key in the state bag for later
 	state.Put(constants.PrivateKey, privkey)
 	log.Printf("createCert: Private key:\n%s", privkey)
 
