@@ -31,7 +31,6 @@ import (
 	virtualboxovfbuilder "github.com/mitchellh/packer/builder/virtualbox/ovf"
 	vmwareisobuilder "github.com/mitchellh/packer/builder/vmware/iso"
 	vmwarevmxbuilder "github.com/mitchellh/packer/builder/vmware/vmx"
-	fileprovisioner "github.com/mitchellh/packer/provisioner/file"
 
 	amazonimportpostprocessor "github.com/mitchellh/packer/post-processor/amazon-import"
 	artificepostprocessor "github.com/mitchellh/packer/post-processor/artifice"
