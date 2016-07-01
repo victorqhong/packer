@@ -9,7 +9,7 @@ func TestOutput(t *testing.T) {
 
 	var ps PowerShellCmd
 
-	powershellAvailable, _, _ := ps.isPowershellAvaiable()
+	powershellAvailable, _, _ := IsPowershellAvailable()
 
 	if !powershellAvailable {
 		t.Skipf("powershell not installed")
@@ -49,7 +49,7 @@ func TestOutput(t *testing.T) {
 func TestRunFile(t *testing.T) {
 	var ps PowerShellCmd
 
-	powershellAvailable, _, _ := ps.isPowershellAvaiable()
+	powershellAvailable, _, _ := IsPowershellAvailable()
 
 	if !powershellAvailable {
 		t.Skipf("powershell not installed")

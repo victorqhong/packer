@@ -96,7 +96,7 @@ func (ps *PowerShellCmd) Output(fileContents string, params ...string) (string, 
 	return stdoutString, err
 }
 
-func (ps *PowerShellCmd) isPowershellAvaiable() (bool, string, error) {
+func IsPowershellAvailable() (bool, string, error) {
 	path, err := exec.LookPath("powershell")
 	if err != nil {
 		return false, "", err
@@ -106,7 +106,7 @@ func (ps *PowerShellCmd) isPowershellAvaiable() (bool, string, error) {
 }
 
 func (ps *PowerShellCmd) getPowerShellPath() (string, error) {
-	powershellAvailable, path, err := ps.isPowershellAvaiable()
+	powershellAvailable, path, err := IsPowershellAvailable()
 
 	if !powershellAvailable {
 		log.Fatal("Cannot find PowerShell in the path")
