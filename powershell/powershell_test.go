@@ -16,8 +16,6 @@ func TestOutput(t *testing.T) {
 		return
 	}
 
-	return
-
 	cmdOut, err := ps.Output("")
 	if err != nil {
 		t.Fatalf("should not have error: %s", err)
