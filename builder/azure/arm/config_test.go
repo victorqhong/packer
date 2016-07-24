@@ -4,7 +4,6 @@
 package arm
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -345,7 +344,7 @@ func TestUseDeviceLoginIsDisabledForWindows(t *testing.T) {
 
 	_, _, err := newConfig(config, getPackerConfiguration())
 	if err == nil {
-		t.Fatalf("Expected test to fail, but it succeeded")
+		t.Fatal("Expected test to fail, but it succeeded")
 	}
 
 	multiError, _ := err.(*packer.MultiError)
@@ -371,6 +370,7 @@ func TestConfigShouldRejectMalformedCaptureNamePrefix(t *testing.T) {
 		"storage_account":        "ignore",
 		"resource_group_name":    "ignore",
 		"subscription_id":        "ignore",
+		"communicator":           "none",
 		// Does not matter for this test case, just pick one.
 		"os_type": constants.Target_Linux,
 	}
@@ -421,6 +421,7 @@ func TestConfigShouldRejectMalformedCaptureContainerName(t *testing.T) {
 		"storage_account":     "ignore",
 		"resource_group_name": "ignore",
 		"subscription_id":     "ignore",
+		"communicator":        "none",
 		// Does not matter for this test case, just pick one.
 		"os_type": constants.Target_Linux,
 	}
@@ -463,7 +464,7 @@ func TestConfigShouldRejectMalformedCaptureContainerName(t *testing.T) {
 func getArmBuilderConfiguration() map[string]string {
 	m := make(map[string]string)
 	for _, v := range requiredConfigValues {
-		m[v] = fmt.Sprintf("ignored00")
+		m[v] = "ignored00"
 	}
 
 	m["communicator"] = "none"
@@ -474,7 +475,7 @@ func getArmBuilderConfiguration() map[string]string {
 func getArmBuilderConfigurationWithWindows() map[string]string {
 	m := make(map[string]string)
 	for _, v := range requiredConfigValues {
-		m[v] = fmt.Sprintf("ignored00")
+		m[v] = "ignored00"
 	}
 
 	m["object_id"] = "ignored00"
