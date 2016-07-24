@@ -121,7 +121,7 @@ func (c *Config) toVirtualMachineCaptureParameters() *compute.VirtualMachineCapt
 func (c *Config) createCertificate() (string, error) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		err := fmt.Errorf("Failed to Generate Private Key: %s", err)
+		err = fmt.Errorf("Failed to Generate Private Key: %s", err)
 		return "", err
 	}
 
@@ -131,7 +131,7 @@ func (c *Config) createCertificate() (string, error) {
 
 	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
 	if err != nil {
-		err := fmt.Errorf("Failed to Generate Serial Number: %v", err)
+		err = fmt.Errorf("Failed to Generate Serial Number: %v", err)
 		return "", err
 	}
 
@@ -299,19 +299,37 @@ func setUserNamePassword(c *Config) {
 }
 
 func setCloudEnvironment(c *Config) error {
+	lookup := map[string]string{
+		"CHINA":           "AzureChinaCloud",
+		"CHINACLOUD":      "AzureChinaCloud",
+		"AZURECHINACLOUD": "AzureChinaCloud",
+
+		"GERMAN":           "AzureGermanCloud",
+		"GERMANCLOUD":      "AzureGermanCloud",
+		"AZUREGERMANCLOUD": "AzureGermanCloud",
+
+		"GERMANY":           "AzureGermanCloud",
+		"GERMANYCLOUD":      "AzureGermanCloud",
+		"AZUREGERMANYCLOUD": "AzureGermanCloud",
+
+		"PUBLIC":           "AzurePublicCloud",
+		"PUBLICCLOUD":      "AzurePublicCloud",
+		"AZUREPUBLICCLOUD": "AzurePublicCloud",
+
+		"USGOVERNMENT":           "AzureUSGovernmentCloud",
+		"USGOVERNMENTCLOUD":      "AzureUSGovernmentCloud",
+		"AZUREUSGOVERNMENTCLOUD": "AzureUSGovernmentCloud",
+	}
+
 	name := strings.ToUpper(c.CloudEnvironmentName)
-	switch name {
-	case "CHINA", "CHINACLOUD", "AZURECHINACLOUD":
-		c.cloudEnvironment = &azure.ChinaCloud
-	case "PUBLIC", "PUBLICCLOUD", "AZUREPUBLICCLOUD":
-		c.cloudEnvironment = &azure.PublicCloud
-	case "USGOVERNMENT", "USGOVERNMENTCLOUD", "AZUREUSGOVERNMENTCLOUD":
-		c.cloudEnvironment = &azure.USGovernmentCloud
-	default:
+	envName, ok := lookup[name]
+	if !ok {
 		return fmt.Errorf("There is no cloud envionment matching the name '%s'!", c.CloudEnvironmentName)
 	}
 
-	return nil
+	env, err := azure.EnvironmentFromName(envName)
+	c.cloudEnvironment = &env
+	return err
 }
 
 func provideDefaultValues(c *Config) {
