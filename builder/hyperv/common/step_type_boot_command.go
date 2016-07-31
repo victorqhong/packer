@@ -162,61 +162,73 @@ func scancodes(message string) []string {
 		if strings.HasPrefix(message, "<leftAltOn>") {
 			scancode = []string{"38"}
 			message = message[len("<leftAltOn>"):]
+			log.Printf("Special code '<leftAltOn>' found, replacing with: 38")
 		}
 
 		if strings.HasPrefix(message, "<leftCtrlOn>") {
 			scancode = []string{"1d"}
 			message = message[len("<leftCtrlOn>"):]
+			log.Printf("Special code '<leftCtrlOn>' found, replacing with: 1d")
 		}
 
 		if strings.HasPrefix(message, "<leftShiftOn>") {
 			scancode = []string{"2a"}
 			message = message[len("<leftShiftOn>"):]
+			log.Printf("Special code '<leftShiftOn>' found, replacing with: 2a")
 		}
 
 		if strings.HasPrefix(message, "<leftAltOff>") {
 			scancode = []string{"b8"}
 			message = message[len("<leftAltOff>"):]
+			log.Printf("Special code '<leftAltOff>' found, replacing with: b8")
 		}
 
 		if strings.HasPrefix(message, "<leftCtrlOff>") {
 			scancode = []string{"9d"}
 			message = message[len("<leftCtrlOff>"):]
+			log.Printf("Special code '<leftCtrlOff>' found, replacing with: 9d")
 		}
 
 		if strings.HasPrefix(message, "<leftShiftOff>") {
 			scancode = []string{"aa"}
 			message = message[len("<leftShiftOff>"):]
+			log.Printf("Special code '<leftShiftOff>' found, replacing with: aa")
 		}
 
 		if strings.HasPrefix(message, "<rightAltOn>") {
 			scancode = []string{"e038"}
 			message = message[len("<rightAltOn>"):]
+			log.Printf("Special code '<rightAltOn>' found, replacing with: e038")
 		}
 
 		if strings.HasPrefix(message, "<rightCtrlOn>") {
 			scancode = []string{"e01d"}
 			message = message[len("<rightCtrlOn>"):]
+			log.Printf("Special code '<rightCtrlOn>' found, replacing with: e01d")
 		}
 
 		if strings.HasPrefix(message, "<rightShiftOn>") {
 			scancode = []string{"36"}
 			message = message[len("<rightShiftOn>"):]
+			log.Printf("Special code '<rightShiftOn>' found, replacing with: 36")
 		}
 
 		if strings.HasPrefix(message, "<rightAltOff>") {
 			scancode = []string{"e0b8"}
 			message = message[len("<rightAltOff>"):]
+			log.Printf("Special code '<rightAltOff>' found, replacing with: e0b8")
 		}
 
 		if strings.HasPrefix(message, "<rightCtrlOff>") {
 			scancode = []string{"e09d"}
 			message = message[len("<rightCtrlOff>"):]
+			log.Printf("Special code '<rightCtrlOff>' found, replacing with: e09d")
 		}
 
 		if strings.HasPrefix(message, "<rightShiftOff>") {
 			scancode = []string{"b6"}
 			message = message[len("<rightShiftOff>"):]
+			log.Printf("Special code '<rightShiftOff>' found, replacing with: b6")
 		}
 
 		if strings.HasPrefix(message, "<wait>") {
