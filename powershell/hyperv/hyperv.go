@@ -223,9 +223,9 @@ func SetVirtualMachineCpu(vmName string, cpu uint, enableVirtualizationExtension
 param([string]$vmName, [int]$cpu, [bool]$exposeVirtualizationExtensions)
 Set-VMProcessor -VMName $vmName -Count $cpu -exposeVirtualizationExtensions $exposeVirtualizationExtensions
 `
-	exposeVirtualizationExtensionsString := "$false"
+	exposeVirtualizationExtensionsString := "$False"
 	if enableVirtualizationExtensions {
-		exposeVirtualizationExtensionsString = "$true"
+		exposeVirtualizationExtensionsString = "$True"
 	} 
 	var ps powershell.PowerShellCmd
 	err := ps.Run(script, vmName, strconv.FormatInt(int64(cpu), 10), exposeVirtualizationExtensionsString)
