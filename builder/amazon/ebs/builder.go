@@ -117,21 +117,21 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 			BlockDevices: b.config.BlockDevices,
 		},
 		&awscommon.StepRunSourceInstance{
-			Debug:                             b.config.PackerDebug,
-			ExpectedRootDevice:                "ebs",
-			SpotPrice:                         b.config.SpotPrice,
-			SpotPriceProduct:                  b.config.SpotPriceAutoProduct,
-			InstanceType:                      b.config.InstanceType,
-			UserData:                          b.config.UserData,
-			UserDataFile:                      b.config.UserDataFile,
-			SourceAMI:                         b.config.SourceAmi,
-			IamInstanceProfile:                b.config.IamInstanceProfile,
-			SubnetId:                          b.config.SubnetId,
-			AssociatePublicIpAddress:          b.config.AssociatePublicIpAddress,
-			EbsOptimized:                      b.config.EbsOptimized,
-			AvailabilityZone:                  b.config.AvailabilityZone,
-			BlockDevices:                      b.config.BlockDevices,
-			Tags:                              b.config.RunTags,
+			Debug:                    b.config.PackerDebug,
+			ExpectedRootDevice:       "ebs",
+			SpotPrice:                b.config.SpotPrice,
+			SpotPriceProduct:         b.config.SpotPriceAutoProduct,
+			InstanceType:             b.config.InstanceType,
+			UserData:                 b.config.UserData,
+			UserDataFile:             b.config.UserDataFile,
+			SourceAMI:                b.config.SourceAmi,
+			IamInstanceProfile:       b.config.IamInstanceProfile,
+			SubnetId:                 b.config.SubnetId,
+			AssociatePublicIpAddress: b.config.AssociatePublicIpAddress,
+			EbsOptimized:             b.config.EbsOptimized,
+			AvailabilityZone:         b.config.AvailabilityZone,
+			BlockDevices:             b.config.BlockDevices,
+			Tags:                     b.config.RunTags,
 			InstanceInitiatedShutdownBehavior: b.config.InstanceInitiatedShutdownBehavior,
 		},
 		&stepTagEBSVolumes{
@@ -179,15 +179,7 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 	}
 
 	// Run!
-	if b.config.PackerDebug {
-		b.runner = &multistep.DebugRunner{
-			Steps:   steps,
-			PauseFn: common.MultistepDebugFn(ui),
-		}
-	} else {
-		b.runner = &multistep.BasicRunner{Steps: steps}
-	}
-
+	b.runner = common.NewRunner(steps, b.config.PackerConfig, ui)
 	b.runner.Run(state)
 
 	// If there was an error, return that

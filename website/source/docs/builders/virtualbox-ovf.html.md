@@ -83,8 +83,44 @@ builder.
     specified, the default is 10 seconds.
 
 -   `export_opts` (array of strings) - Additional options to pass to the
-    `VBoxManage export`. This can be useful for passing product information to
-    include in the resulting appliance file.
+    [VBoxManage export](https://www.virtualbox.org/manual/ch08.html#vboxmanage-export).
+    This can be useful for passing product information to include in the
+    resulting appliance file. Packer JSON configuration file example:
+
+    ``` {.json}
+    {
+      "type": "virtualbox-ovf",
+      "export_opts":
+      [
+        "--manifest",
+        "--vsys", "0",
+        "--description", "{{user `vm_description`}}",
+        "--version", "{{user `vm_version`}}"
+      ],
+      "format": "ova",
+    }
+    ```
+
+    A VirtualBox [VM description](https://www.virtualbox.org/manual/ch08.html#idm3756)
+    may contain arbitrary strings; the GUI interprets HTML formatting.
+    However, the JSON format does not allow arbitrary newlines within a
+    value. Add a multi-line description by preparing the string in the
+    shell before the packer call like this (shell `>` continuation
+    character snipped for easier copy & paste):
+
+    ``` {.shell}
+
+    vm_description='some
+    multiline
+    description'
+
+    vm_version='0.2.0'
+
+    packer build \
+        -var "vm_description=${vm_description}" \
+        -var "vm_version=${vm_version}"         \
+        "packer_conf.json"
+    ```
 
 -   `floppy_files` (array of strings) - A list of files to place onto a floppy
     disk that is attached when the VM is booted. This is most useful for
@@ -214,6 +250,91 @@ builder.
     to use for VRDP access to the virtual machine. Packer uses a randomly chosen
     port in this range that appears available. By default this is 5900 to 6000.
     The minimum and maximum ports are inclusive.
+
+## Boot Command
+
+The `boot_command` configuration is very important: it specifies the keys to
+type when the virtual machine is first booted in order to start the OS
+installer. This command is typed after `boot_wait`.
+
+As documented above, the `boot_command` is an array of strings. The strings are
+all typed in sequence. It is an array only to improve readability within the
+template.
+
+The boot command is "typed" character for character over a VNC connection to the
+machine, simulating a human actually typing the keyboard. There are a set of
+special keys available. If these are in your boot command, they will be replaced
+by the proper key:
+
+-   `<bs>` - Backspace
+
+-   `<del>` - Delete
+
+-   `<enter>` and `<return>` - Simulates an actual "enter" or "return" keypress.
+
+-   `<esc>` - Simulates pressing the escape key.
+
+-   `<tab>` - Simulates pressing the tab key.
+
+-   `<f1>` - `<f12>` - Simulates pressing a function key.
+
+-   `<up>` `<down>` `<left>` `<right>` - Simulates pressing an arrow key.
+
+-   `<spacebar>` - Simulates pressing the spacebar.
+
+-   `<insert>` - Simulates pressing the insert key.
+
+-   `<home>` `<end>` - Simulates pressing the home and end keys.
+
+-   `<pageUp>` `<pageDown>` - Simulates pressing the page up and page down keys.
+
+-   `<leftAlt>` `<rightAlt>`  - Simulates pressing the alt key.
+
+-   `<leftCtrl>` `<rightCtrl>` - Simulates pressing the ctrl key.
+
+-   `<leftShift>` `<rightShift>` - Simulates pressing the shift key.
+
+-   `<leftAltOn>` `<rightAltOn>`  - Simulates pressing and holding the alt key.
+
+-   `<leftCtrlOn>` `<rightCtrlOn>` - Simulates pressing and holding the ctrl key. 
+
+-   `<leftShiftOn>` `<rightShiftOn>` - Simulates pressing and holding the shift key.
+
+-   `<leftAltOff>` `<rightAltOff>`  - Simulates releasing a held alt key.
+
+-   `<leftCtrlOff>` `<rightCtrlOff>` - Simulates releasing a held ctrl key.
+
+-   `<leftShiftOff>` `<rightShiftOff>` - Simulates releasing a held shift key.
+
+-   `<wait>` `<wait5>` `<wait10>` - Adds a 1, 5 or 10 second pause before
+    sending any additional keys. This is useful if you have to generally wait
+    for the UI to update before typing more.
+
+In addition to the special keys, each command to type is treated as a
+[configuration template](/docs/templates/configuration-templates.html). The
+available variables are:
+
+-   `HTTPIP` and `HTTPPort` - The IP and port, respectively of an HTTP server
+    that is started serving the directory specified by the `http_directory`
+    configuration parameter. If `http_directory` isn't specified, these will be
+    blank!
+
+Example boot command. This is actually a working boot command used to start an
+Ubuntu 12.04 installer:
+
+``` {.text}
+[
+  "<esc><esc><enter><wait>",
+  "/install/vmlinuz noapic ",
+  "preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg ",
+  "debian-installer=en_US auto locale=en_US kbd-chooser/method=us ",
+  "hostname={{ .Name }} ",
+  "fb=false debconf/frontend=noninteractive ",
+  "keyboard-configuration/modelcode=SKIP keyboard-configuration/layout=USA ",
+  "keyboard-configuration/variant=USA console-setup/ask_detect=false ",
+  "initrd=/install/initrd.gz -- <enter>"
+]
+```
 
 ## Guest Additions
 

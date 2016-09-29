@@ -157,7 +157,7 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 		ui.Message(fmt.Sprintf("temp admin password: '%s'", b.config.Password))
 	}
 
-	b.runner = b.createRunner(&steps, ui)
+	b.runner = packerCommon.NewRunner(steps, b.config.PackerConfig, ui)
 	b.runner.Run(b.stateBag)
 
 	// Report any errors.
@@ -198,19 +198,6 @@ func (b *Builder) Cancel() {
 	}
 }
 
-func (b *Builder) createRunner(steps *[]multistep.Step, ui packer.Ui) multistep.Runner {
-	if b.config.PackerDebug {
-		return &multistep.DebugRunner{
-			Steps:   *steps,
-			PauseFn: packerCommon.MultistepDebugFn(ui),
-		}
-	}
-
-	return &multistep.BasicRunner{
-		Steps: *steps,
-	}
-}
-
 func (b *Builder) getBlobEndpoint(client *AzureClient, resourceGroupName string, storageAccountName string) (string, error) {
 	account, err := client.AccountsClient.GetProperties(resourceGroupName, storageAccountName)
 	if err != nil {
@@ -224,6 +211,7 @@ func (b *Builder) configureStateBag(stateBag multistep.StateBag) {
 	stateBag.Put(constants.AuthorizedKey, b.config.sshAuthorizedKey)
 	stateBag.Put(constants.PrivateKey, b.config.sshPrivateKey)
 
+	stateBag.Put(constants.ArmTags, &b.config.AzureTags)
 	stateBag.Put(constants.ArmComputeName, b.config.tmpComputeName)
 	stateBag.Put(constants.ArmDeploymentName, b.config.tmpDeploymentName)
 	stateBag.Put(constants.ArmKeyVaultName, b.config.tmpKeyVaultName)
