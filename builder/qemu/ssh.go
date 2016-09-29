@@ -11,14 +11,9 @@ func commHost(state multistep.StateBag) (string, error) {
 	return "127.0.0.1", nil
 }
 
-func SSHPort(state multistep.StateBag) (int, error) {
+func commPort(state multistep.StateBag) (int, error) {
 	sshHostPort := state.Get("sshHostPort").(uint)
 	return int(sshHostPort), nil
-}
-
-func WinRMPort(state multistep.StateBag) (int, error) {
-	winRMHostPort := state.Get("sshHostPort").(uint)
-	return int(winRMHostPort), nil
 }
 
 func sshConfig(state multistep.StateBag) (*gossh.ClientConfig, error) {
