@@ -83,8 +83,44 @@ builder.
     specified, the default is 10 seconds.
 
 -   `export_opts` (array of strings) - Additional options to pass to the
-    `VBoxManage export`. This can be useful for passing product information to
-    include in the resulting appliance file.
+    [VBoxManage export](https://www.virtualbox.org/manual/ch08.html#vboxmanage-export).
+    This can be useful for passing product information to include in the
+    resulting appliance file. Packer JSON configuration file example:
+
+    ``` {.json}
+    {
+      "type": "virtualbox-ovf",
+      "export_opts":
+      [
+        "--manifest",
+        "--vsys", "0",
+        "--description", "{{user `vm_description`}}",
+        "--version", "{{user `vm_version`}}"
+      ],
+      "format": "ova",
+    }
+    ```
+
+    A VirtualBox [VM description](https://www.virtualbox.org/manual/ch08.html#idm3756)
+    may contain arbitrary strings; the GUI interprets HTML formatting.
+    However, the JSON format does not allow arbitrary newlines within a
+    value. Add a multi-line description by preparing the string in the
+    shell before the packer call like this (shell `>` continuation
+    character snipped for easier copy & paste):
+
+    ``` {.shell}
+
+    vm_description='some
+    multiline
+    description'
+
+    vm_version='0.2.0'
+
+    packer build \
+        -var "vm_description=${vm_description}" \
+        -var "vm_version=${vm_version}"         \
+        "packer_conf.json"
+    ```
 
 -   `floppy_files` (array of strings) - A list of files to place onto a floppy
     disk that is attached when the VM is booted. This is most useful for
@@ -219,8 +255,7 @@ builder.
 
 The `boot_command` configuration is very important: it specifies the keys to
 type when the virtual machine is first booted in order to start the OS
-installer. This command is typed after `boot_wait`, which gives the virtual
-machine some time to actually load the ISO.
+installer. This command is typed after `boot_wait`.
 
 As documented above, the `boot_command` is an array of strings. The strings are
 all typed in sequence. It is an array only to improve readability within the
@@ -274,8 +309,6 @@ by the proper key:
 -   `<wait>` `<wait5>` `<wait10>` - Adds a 1, 5 or 10 second pause before
     sending any additional keys. This is useful if you have to generally wait
     for the UI to update before typing more.
-
-When using modifier keys `ctrl`, `alt`, `shift` ensure that you release them, otherwise they will be held down until the machine reboots. Use lowercase characters as well inside modifiers. For example: to simulate ctrl+c use `<leftCtrlOn>c<leftCtrlOff>`.
 
 In addition to the special keys, each command to type is treated as a
 [configuration template](/docs/templates/configuration-templates.html). The

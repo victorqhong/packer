@@ -103,7 +103,7 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 		},
 		&communicator.StepConnect{
 			Config:    &b.config.SSHConfig.Comm,
-			Host:      vboxcommon.CommHost,
+			Host:      vboxcommon.CommHost(b.config.SSHConfig.Comm.SSHHost),
 			SSHConfig: vboxcommon.SSHConfigFunc(b.config.SSHConfig),
 			SSHPort:   vboxcommon.SSHPort,
 		},
@@ -134,16 +134,7 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 	}
 
 	// Run the steps.
-	if b.config.PackerDebug {
-		pauseFn := common.MultistepDebugFn(ui)
-		state.Put("pauseFn", pauseFn)
-		b.runner = &multistep.DebugRunner{
-			Steps:   steps,
-			PauseFn: pauseFn,
-		}
-	} else {
-		b.runner = &multistep.BasicRunner{Steps: steps}
-	}
+	b.runner = common.NewRunnerWithPauseFn(steps, b.config.PackerConfig, ui, state)
 	b.runner.Run(state)
 
 	// Report any errors.
