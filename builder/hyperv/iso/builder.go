@@ -87,6 +87,8 @@ type Config struct {
 
 	BootCommand                    []string `mapstructure:"boot_command"`
 	SwitchName                     string   `mapstructure:"switch_name"`
+	SwitchVlanId                   string   `mapstructure:"switch_vlan_id"`
+	VlanId                         string   `mapstructure:"vlan_id"`
 	Cpu                            uint     `mapstructure:"cpu"`
 	Generation                     uint     `mapstructure:"generation"`
 	EnableMacSpoofing              bool     `mapstructure:"enable_mac_spoofing"`
@@ -271,6 +273,13 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 		}
 	}
 
+	if b.config.SwitchVlanId != "" {
+		if b.config.SwitchVlanId != b.config.VlanId {
+			warning = fmt.Sprintf("Switch network adaptor vlan should match virtual machine network adaptor vlan. The switch will not be able to see traffic from the VM.")
+			warnings = appendWarnings(warnings, warning)
+		}
+	}
+
 	if errs != nil && len(errs.Errors) > 0 {
 		return warnings, errs
 	}
@@ -352,6 +361,11 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 		&hypervcommon.StepMountSecondaryDvdImages{
 			IsoPaths:   b.config.SecondaryDvdImages,
 			Generation: b.config.Generation,
+		},
+
+		&hypervcommon.StepConfigureVlan{
+			VlanId:       b.config.VlanId,
+			SwitchVlanId: b.config.SwitchVlanId,
 		},
 
 		&hypervcommon.StepRun{
