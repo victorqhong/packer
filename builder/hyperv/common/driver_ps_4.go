@@ -170,8 +170,8 @@ func (d *HypervPS4Driver) CreateVirtualSwitch(switchName string, switchType stri
 	return hyperv.CreateVirtualSwitch(switchName, switchType)
 }
 
-func (d *HypervPS4Driver) CreateVirtualMachine(vmName string, path string, ram int64, diskSize int64, switchName string, generation uint) error {
-	return hyperv.CreateVirtualMachine(vmName, path, ram, diskSize, switchName, generation)
+func (d *HypervPS4Driver) CreateVirtualMachine(vmName string, path string, ram int64, diskSize int64, switchName string, generation uint, version string) error {
+	return hyperv.CreateVirtualMachine(vmName, path, ram, diskSize, switchName, generation, version)
 }
 
 func (d *HypervPS4Driver) DeleteVirtualMachine(vmName string) error {

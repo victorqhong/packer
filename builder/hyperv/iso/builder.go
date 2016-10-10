@@ -89,6 +89,7 @@ type Config struct {
 	SwitchName                     string   `mapstructure:"switch_name"`
 	SwitchVlanId                   string   `mapstructure:"switch_vlan_id"`
 	VlanId                         string   `mapstructure:"vlan_id"`
+	Version	                       string   `mapstructure:"version"`
 	Cpu                            uint     `mapstructure:"cpu"`
 	Generation                     uint     `mapstructure:"generation"`
 	EnableMacSpoofing              bool     `mapstructure:"enable_mac_spoofing"`
@@ -280,6 +281,14 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 		}
 	}
 
+	if b.config.Version == "" {
+		warning = fmt.Sprintf("Virtal machine version was not specified. Virtual machine will be created with version 5.0.")
+		warnings = appendWarnings(warnings, warning)
+		b.config.Version = "5.0"
+	}
+
+	log.Println(fmt.Sprintf("Using version %s", b.config.Version))
+
 	if errs != nil && len(errs.Errors) > 0 {
 		return warnings, errs
 	}
@@ -337,6 +346,7 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 			RamSizeMB:                      b.config.RamSizeMB,
 			DiskSize:                       b.config.DiskSize,
 			Generation:                     b.config.Generation,
+			Version:                        b.config.Version,
 			Cpu:                            b.config.Cpu,
 			EnableMacSpoofing:              b.config.EnableMacSpoofing,
 			EnableDynamicMemory:            b.config.EnableDynamicMemory,

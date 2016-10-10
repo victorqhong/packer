@@ -187,27 +187,27 @@ Set-VMFloppyDiskDrive -VMName $vmName -Path $null
 	return err
 }
 
-func CreateVirtualMachine(vmName string, path string, ram int64, diskSize int64, switchName string, generation uint) error {
+func CreateVirtualMachine(vmName string, path string, ram int64, diskSize int64, switchName string, generation uint, version string) error {
 
 	if generation == 2 {
 		var script = `
-param([string]$vmName, [string]$path, [long]$memoryStartupBytes, [long]$newVHDSizeBytes, [string]$switchName, [int]$generation)
+param([string]$vmName, [string]$path, [long]$memoryStartupBytes, [long]$newVHDSizeBytes, [string]$switchName, [int]$generation, [string]$version)
 $vhdx = $vmName + '.vhdx'
 $vhdPath = Join-Path -Path $path -ChildPath $vhdx
-New-VM -Name $vmName -Path $path -MemoryStartupBytes $memoryStartupBytes -NewVHDPath $vhdPath -NewVHDSizeBytes $newVHDSizeBytes -SwitchName $switchName -Generation $generation
+New-VM -Name $vmName -Path $path -MemoryStartupBytes $memoryStartupBytes -NewVHDPath $vhdPath -NewVHDSizeBytes $newVHDSizeBytes -SwitchName $switchName -Generation $generation -Version $version
 `
 		var ps powershell.PowerShellCmd
-		err := ps.Run(script, vmName, path, strconv.FormatInt(ram, 10), strconv.FormatInt(diskSize, 10), switchName, strconv.FormatInt(int64(generation), 10))
+		err := ps.Run(script, vmName, path, strconv.FormatInt(ram, 10), strconv.FormatInt(diskSize, 10), switchName, strconv.FormatInt(int64(generation), 10), version)
 		return err
 	} else {
 		var script = `
-param([string]$vmName, [string]$path, [long]$memoryStartupBytes, [long]$newVHDSizeBytes, [string]$switchName)
+param([string]$vmName, [string]$path, [long]$memoryStartupBytes, [long]$newVHDSizeBytes, [string]$switchName, [string]$version)
 $vhdx = $vmName + '.vhdx'
 $vhdPath = Join-Path -Path $path -ChildPath $vhdx
-New-VM -Name $vmName -Path $path -MemoryStartupBytes $memoryStartupBytes -NewVHDPath $vhdPath -NewVHDSizeBytes $newVHDSizeBytes -SwitchName $switchName
+New-VM -Name $vmName -Path $path -MemoryStartupBytes $memoryStartupBytes -NewVHDPath $vhdPath -NewVHDSizeBytes $newVHDSizeBytes -SwitchName $switchName -Version $version
 `
 		var ps powershell.PowerShellCmd
-		err := ps.Run(script, vmName, path, strconv.FormatInt(ram, 10), strconv.FormatInt(diskSize, 10), switchName)
+		err := ps.Run(script, vmName, path, strconv.FormatInt(ram, 10), strconv.FormatInt(diskSize, 10), switchName, version)
 
 		if err != nil {
 			return err

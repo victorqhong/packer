@@ -68,7 +68,7 @@ type Driver interface {
 
 	DeleteVirtualSwitch(string) error
 
-	CreateVirtualMachine(string, string, int64, int64, string, uint) error
+	CreateVirtualMachine(string, string, int64, int64, string, uint, string) error
 
 	DeleteVirtualMachine(string) error
 
