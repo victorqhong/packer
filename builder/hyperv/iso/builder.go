@@ -86,10 +86,11 @@ type Config struct {
 	VMName string `mapstructure:"vm_name"`
 
 	BootCommand                    []string `mapstructure:"boot_command"`
+	ModifyCommands                 []string `mapstructure:"modify_vm"`
 	SwitchName                     string   `mapstructure:"switch_name"`
 	SwitchVlanId                   string   `mapstructure:"switch_vlan_id"`
 	VlanId                         string   `mapstructure:"vlan_id"`
-	Version	                       string   `mapstructure:"version"`
+	Version                        string   `mapstructure:"version"`
 	Cpu                            uint     `mapstructure:"cpu"`
 	Generation                     uint     `mapstructure:"generation"`
 	EnableMacSpoofing              bool     `mapstructure:"enable_mac_spoofing"`
@@ -117,6 +118,7 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 		InterpolateFilter: &interpolate.RenderFilter{
 			Exclude: []string{
 				"boot_command",
+				"modify_vm",
 			},
 		},
 	}, raws...)
@@ -376,6 +378,11 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 		&hypervcommon.StepConfigureVlan{
 			VlanId:       b.config.VlanId,
 			SwitchVlanId: b.config.SwitchVlanId,
+		},
+
+		&hypervcommon.StepModifyVM{
+			ModifyCommands: b.config.ModifyCommands,
+			Ctx:            b.config.ctx,
 		},
 
 		&hypervcommon.StepRun{
