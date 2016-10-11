@@ -222,6 +222,10 @@ func (d *HypervPS4Driver) CreateDvdDrive(vmName string, isoPath string, generati
 	return hyperv.CreateDvdDrive(vmName, isoPath, generation)
 }
 
+func (d *HypervPS4Driver) CreateDvdDriveAt(vmName string, controllerNumber uint, controllerLocation uint, isoPath string, generation uint) error {
+	return hyperv.CreateDvdDriveAt(vmName, controllerNumber, controllerLocation, isoPath, generation)
+}
+
 func (d *HypervPS4Driver) MountDvdDrive(vmName string, path string, controllerNumber uint, controllerLocation uint) error {
 	return hyperv.MountDvdDrive(vmName, path, controllerNumber, controllerLocation)
 }

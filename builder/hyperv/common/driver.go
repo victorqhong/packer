@@ -94,6 +94,8 @@ type Driver interface {
 
 	CreateDvdDrive(string, string, uint) (uint, uint, error)
 
+	CreateDvdDriveAt(string, uint, uint, string, uint) error
+
 	MountDvdDrive(string, string, uint, uint) error
 
 	SetBootDvdDrive(string, uint, uint, uint) error

@@ -56,6 +56,10 @@ type Config struct {
 	hypervcommon.RunConfig      `mapstructure:",squash"`
 	hypervcommon.ShutdownConfig `mapstructure:",squash"`
 
+	ISOControllerNumber string `mapstructure:"iso_controller_number"`
+
+	ISOControllerLocation string `mapstructure:"iso_controller_location"`
+
 	// The size, in megabytes, of the hard disk to create for the VM.
 	// By default, this is 130048 (about 127 GB).
 	DiskSize uint `mapstructure:"disk_size"`
@@ -80,6 +84,10 @@ type Config struct {
 
 	// The path to the integration services iso
 	GuestAdditionsPath string `mapstructure:"guest_additions_path"`
+
+	GuestAdditionsControllerNumber string `mapstructure:"guest_additions_controller_number"`
+
+	GuestAdditionsControllerLocation string `mapstructure:"guest_additions_controller_location"`
 
 	// This is the name of the new virtual machine.
 	// By default this is "packer-BUILDNAME", where "BUILDNAME" is the name of the build.
@@ -291,6 +299,26 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 
 	log.Println(fmt.Sprintf("Using version %s", b.config.Version))
 
+	if b.config.GuestAdditionsControllerLocation == "" {
+		warning = fmt.Sprintf("Virtal machine guest additions controller index was not specified. Guest additions will use first available location.")
+		warnings = appendWarnings(warnings, warning)
+	}
+
+	if b.config.GuestAdditionsControllerNumber == "" {
+		warning = fmt.Sprintf("Virtal machine guest additions controller number was not specified. Guest additions will use first available number.")
+		warnings = appendWarnings(warnings, warning)
+	}
+
+	if b.config.ISOControllerLocation == "" {
+		warning = fmt.Sprintf("Virtal machine iso controller index was not specified. ISO will use first available location.")
+		warnings = appendWarnings(warnings, warning)
+	}
+
+	if b.config.ISOControllerNumber == "" {
+		warning = fmt.Sprintf("Virtal machine iso controller number was not specified. ISO will use first available number.")
+		warnings = appendWarnings(warnings, warning)
+	}
+
 	if errs != nil && len(errs.Errors) > 0 {
 		return warnings, errs
 	}
@@ -357,8 +385,15 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 		},
 		&hypervcommon.StepEnableIntegrationService{},
 
+		&hypervcommon.StepModifyVM{
+			ModifyCommands: b.config.ModifyCommands,
+			Ctx:            b.config.ctx,
+		},
+
 		&hypervcommon.StepMountDvdDrive{
-			Generation: b.config.Generation,
+			ControllerLocation: b.config.ISOControllerLocation,
+			ControllerNumber:   b.config.ISOControllerNumber,
+			Generation:         b.config.Generation,
 		},
 		&hypervcommon.StepMountFloppydrive{
 			Generation: b.config.Generation,
@@ -367,6 +402,8 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 		&hypervcommon.StepMountGuestAdditions{
 			GuestAdditionsMode: b.config.GuestAdditionsMode,
 			GuestAdditionsPath: b.config.GuestAdditionsPath,
+			ControllerLocation: b.config.GuestAdditionsControllerLocation,
+			ControllerNumber:   b.config.GuestAdditionsControllerNumber,
 			Generation:         b.config.Generation,
 		},
 
@@ -378,11 +415,6 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 		&hypervcommon.StepConfigureVlan{
 			VlanId:       b.config.VlanId,
 			SwitchVlanId: b.config.SwitchVlanId,
-		},
-
-		&hypervcommon.StepModifyVM{
-			ModifyCommands: b.config.ModifyCommands,
-			Ctx:            b.config.ctx,
 		},
 
 		&hypervcommon.StepRun{

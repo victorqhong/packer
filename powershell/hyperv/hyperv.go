@@ -90,6 +90,23 @@ $result
 	return controllerNumber, controllerLocation, err
 }
 
+func CreateDvdDriveAt(vmName string, controllerNumber uint, controllerLocation uint, isoPath string, generation uint) error {
+	var ps powershell.PowerShellCmd
+	var script string
+
+	script = `
+param([string]$vmName, [int]$controllerNumber, [int]$controllerLocation, [string]$isoPath)
+$dvdController = Add-VMDvdDrive -VMName $vmName -ControllerNumber $controllerNumber -ControllerLocation $controllerLocation -path $isoPath -Passthru
+$dvdController | Set-VMDvdDrive -path $null
+`
+	_, err := ps.Output(script, vmName, strconv.FormatInt(int64(controllerNumber), 10), strconv.FormatInt(int64(controllerLocation), 10), isoPath)
+	if err != nil {
+		return err
+	}
+
+	return err
+}
+
 func MountDvdDrive(vmName string, path string, controllerNumber uint, controllerLocation uint) error {
 
 	var script = `

@@ -6,13 +6,17 @@ package common
 
 import (
 	"fmt"
+	"log"
+	"strconv"
+
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/packer"
-	"log"
 )
 
 type StepMountDvdDrive struct {
-	Generation uint
+	ControllerNumber   string
+	ControllerLocation string
+	Generation         uint
 }
 
 func (s *StepMountDvdDrive) Run(state multistep.StateBag) multistep.StepAction {
@@ -29,14 +33,44 @@ func (s *StepMountDvdDrive) Run(state multistep.StateBag) multistep.StepAction {
 
 	// For IDE, there are only 2 controllers (0,1) with 2 locations each (0,1)
 
-	var dvdControllerProperties DvdControllerProperties
-	controllerNumber, controllerLocation, err := driver.CreateDvdDrive(vmName, isoPath, s.Generation)
-	if err != nil {
-		state.Put("error", err)
-		ui.Error(err.Error())
-		return multistep.ActionHalt
+	var controllerNumber uint
+	var controllerLocation uint
+	var err error
+
+	if s.ControllerLocation == "" || s.ControllerNumber == "" {
+		controllerNumber, controllerLocation, err = driver.CreateDvdDrive(vmName, isoPath, s.Generation)
+		if err != nil {
+			state.Put("error", err)
+			ui.Error(err.Error())
+			return multistep.ActionHalt
+		}
+	} else {
+		number, err := strconv.ParseUint(s.ControllerNumber, 10, 32)
+		if err != nil {
+			state.Put("error", err)
+			ui.Error(err.Error())
+			return multistep.ActionHalt
+		}
+
+		location, err := strconv.ParseUint(s.ControllerLocation, 10, 32)
+		if err != nil {
+			state.Put("error", err)
+			ui.Error(err.Error())
+			return multistep.ActionHalt
+		}
+
+		controllerNumber = uint(number)
+		controllerLocation = uint(location)
+
+		err = driver.CreateDvdDriveAt(vmName, controllerNumber, controllerLocation, isoPath, s.Generation)
+		if err != nil {
+			state.Put("error", err)
+			ui.Error(err.Error())
+			return multistep.ActionHalt
+		}
 	}
 
+	var dvdControllerProperties DvdControllerProperties
 	dvdControllerProperties.ControllerNumber = controllerNumber
 	dvdControllerProperties.ControllerLocation = controllerLocation
 	dvdControllerProperties.Existing = false
